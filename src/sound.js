@@ -1,22 +1,50 @@
-// Soft card sounds, made on the fly with the browser's audio, so there are no
-// sound files to download. Everything is quiet and short. Off unless enabled.
-//
-// Real card sounds are mostly paper noise: a slide across the table ends in a
-// soft, low tap, and a riffle shuffle is dozens of tiny flicks in a burst.
-// Each sound here is built from short slices of filtered noise shaped like that.
+// Soft card sounds. Placing a card and shuffling use short real recordings
+// (sounds/, about 28 KB together); the smaller sounds are made on the fly from
+// filtered noise. Real card sounds sit almost entirely between 1.5 and 10 kHz,
+// so nothing here has any low, woody body to it. Off unless enabled.
 
 let ctx = null;
 let enabled = false;
 let noiseBuf = null;
+const samples = {};
+const SAMPLE_FILES = { down: 'card-down.m4a', shuffle: 'shuffle.m4a' };
 
 export function setEnabled(on) {
   enabled = on;
+  if (on) preload();
 }
 
 // Phones only allow audio to start from a touch, so wake it up on each one.
 export function unlock() {
   if (!enabled) return;
   try { audio(); } catch {}
+}
+
+// Fetch and decode the recordings once. The audio can be created (paused)
+// without a touch, which is enough to decode them ahead of time.
+let loading = null;
+function preload() {
+  if (loading) return;
+  try {
+    const a = audio();
+    if (!a) return;
+    loading = Promise.all(Object.entries(SAMPLE_FILES).map(async ([name, file]) => {
+      const res = await fetch(new URL(`../sounds/${file}`, import.meta.url));
+      samples[name] = await a.decodeAudioData(await res.arrayBuffer());
+    })).catch(() => { loading = null; });
+  } catch {}
+}
+
+function sample(a, t, name, { gain = 1, rate = 1 } = {}) {
+  const buf = samples[name];
+  if (!buf) return;
+  const src = a.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  const g = a.createGain();
+  g.gain.value = gain;
+  src.connect(g).connect(a.destination);
+  src.start(t);
 }
 
 function audio() {
@@ -57,12 +85,10 @@ function burst(a, t, { length, type = 'bandpass', freq, freqEnd = freq, q = 0.7,
   src.start(t, Math.random() * 0.8, length + 0.02);
 }
 
-// A card sliding a little way and settling onto the pile: a short papery
-// swish, then a soft, muffled tap as it lands.
+// Setting a card down: the recording, with a touch of variation each time
+// so repeated moves don't sound identical.
 function place(a, t, loud = 1) {
-  burst(a, t, { length: 0.07, freq: 3200, freqEnd: 1400, q: 0.6, gain: 0.05 * loud, attack: 0.02 });
-  burst(a, t + 0.055, { length: 0.05, type: 'lowpass', freq: 900, freqEnd: 300, q: 0.9, gain: 0.32 * loud });
-  burst(a, t + 0.055, { length: 0.018, freq: 2400, q: 1.5, gain: 0.05 * loud });
+  sample(a, t, 'down', { gain: 0.8 * loud, rate: 0.94 + Math.random() * 0.12 });
 }
 
 // Turning a card over: a quick, light flick.
@@ -70,36 +96,11 @@ function flip(a, t) {
   burst(a, t, { length: 0.04, freq: 3800, freqEnd: 2200, q: 1.0, gain: 0.07, attack: 0.008 });
 }
 
-// A riffle shuffle: two halves of the deck flick together, quickly at first and
-// thinning out at the end, then the cards are squared up with a soft knock.
-function riffle(a, t) {
-  const flicks = 46;
-  const span = 0.75;
-  let time = t;
-  for (let i = 0; i < flicks; i++) {
-    const p = i / (flicks - 1);
-    const swell = Math.sin(Math.PI * Math.min(1, p * 1.15)) * 0.8 + 0.2;
-    burst(a, time, {
-      length: 0.012 + Math.random() * 0.008,
-      type: 'highpass',
-      freq: 2200 + Math.random() * 1800,
-      q: 0.5,
-      gain: 0.07 * swell * (0.7 + Math.random() * 0.6),
-      attack: 0.001,
-    });
-    // Flicks start close together and spread out as the halves run out.
-    time += (span / flicks) * (0.6 + p * 0.9) * (0.8 + Math.random() * 0.4);
-  }
-  // The cards falling together in the bridge, then tapped square on the table.
-  burst(a, time + 0.02, { length: 0.22, freq: 2600, freqEnd: 900, q: 0.5, gain: 0.05, attack: 0.04 });
-  burst(a, time + 0.28, { length: 0.05, type: 'lowpass', freq: 700, freqEnd: 250, gain: 0.3 });
-  burst(a, time + 0.40, { length: 0.05, type: 'lowpass', freq: 700, freqEnd: 250, gain: 0.22 });
-}
-
-// Turning the waste back over onto the stock: one longer sweep.
+// Turning the waste back over onto the stock: a light paper sweep, then the
+// cards set down.
 function gather(a, t) {
-  burst(a, t, { length: 0.18, freq: 1800, freqEnd: 3200, q: 0.5, gain: 0.05, attack: 0.05 });
-  burst(a, t + 0.16, { length: 0.05, type: 'lowpass', freq: 800, freqEnd: 300, gain: 0.25 });
+  burst(a, t, { length: 0.16, type: 'highpass', freq: 2500, freqEnd: 4000, q: 0.5, gain: 0.04, attack: 0.05 });
+  place(a, t + 0.12, 0.8);
 }
 
 // A soft sine note with a gentle fade, for the win chime.
@@ -144,7 +145,7 @@ function playNow(a, name, opts) {
       for (let i = 0; i < count; i++) place(a, t + i * 0.07, 0.7);
       break;
     case 'shuffle':
-      riffle(a, t);
+      sample(a, t, 'shuffle', { gain: 0.8 });
       break;
     case 'gather':
       gather(a, t);
