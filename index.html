@@ -21,6 +21,7 @@
     if (a === 'dark' || (a === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) root.dataset.theme = 'dark';
     if (look.table) root.dataset.table = look.table;
     if (look.back) root.dataset.back = look.back;
+    if (look.suits) root.dataset.suits = look.suits;
   } catch (e) {}
 </script>
 </head>
@@ -134,6 +135,19 @@
           <button class="swatch" data-value="lattice"><span class="mini bk-lattice"></span>Lattice</button>
         </div>
       </fieldset>
+      <label class="toggle">
+        <span>Four-colour suits</span>
+        <input type="checkbox" data-setting="fourColour">
+      </label>
+      <label class="toggle">
+        <span>Card sounds</span>
+        <input type="checkbox" data-setting="sound">
+      </label>
+      <label class="toggle">
+        <span>Winnable deals only</span>
+        <input type="checkbox" data-setting="winnableOnly">
+      </label>
+      <p class="note">Winnable deals start from your next new game.</p>
       <label class="toggle">
         <span>Deck on the right</span>
         <input type="checkbox" data-setting="deckOnRight">

@@ -13,6 +13,9 @@ export const defaultSettings = {
   appearance: 'auto', // auto follows the phone's light/dark setting
   table: 'sage',
   back: 'terracotta',
+  sound: false,
+  fourColour: false,
+  winnableOnly: false,
 };
 
 export function load() {

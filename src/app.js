@@ -3,6 +3,8 @@
 
 import * as E from './engine.js';
 import * as store from './storage.js';
+import * as sound from './sound.js';
+import { DRAW1, DRAW3 } from './winnable.js';
 
 const SUIT_CHAR = { S: '♠︎', H: '♥︎', D: '♦︎', C: '♣︎' };
 const RANK = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -35,6 +37,7 @@ function init() {
     }
   }
   applyLook();
+  sound.setEnabled(settings.sound);
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyLook);
   buildSlots();
   buildCards();
@@ -79,7 +82,7 @@ function buildCards() {
     const el = document.createElement('div');
     el.className = 'card';
     el.dataset.id = c.id;
-    const colour = E.isRed(c) ? 'red' : 'black';
+    const colour = (E.isRed(c) ? 'red' : 'black') + ' suit-' + c.suit;
     el.innerHTML =
       `<div class="card-inner"><div class="face ${colour}">` +
       `<div class="corner"><span>${RANK[c.rank]}</span><span class="s">${SUIT_CHAR[c.suit]}</span></div>` +
@@ -91,7 +94,7 @@ function buildCards() {
 
 // ---------- Look: light/dark, table colour, card back ----------
 
-const LOOK_KEYS = ['appearance', 'table', 'back'];
+const LOOK_KEYS = ['appearance', 'table', 'back', 'fourColour'];
 
 function applyLook() {
   const root = document.documentElement;
@@ -100,12 +103,13 @@ function applyLook() {
   root.dataset.theme = dark ? 'dark' : 'light';
   root.dataset.table = settings.table;
   root.dataset.back = settings.back;
+  root.dataset.suits = settings.fourColour ? 'four' : 'two';
   // Colours the phone's status bar to match the table.
   const table = getComputedStyle(root).getPropertyValue('--table').trim();
   document.querySelector('meta[name=theme-color]').setAttribute('content', table);
   // A tiny separate key so index.html can apply the look before the first paint.
   try {
-    localStorage.setItem('calm-solitaire-look', JSON.stringify({ appearance: a, table: settings.table, back: settings.back }));
+    localStorage.setItem('calm-solitaire-look', JSON.stringify({ appearance: a, table: settings.table, back: settings.back, suits: root.dataset.suits }));
   } catch {}
 }
 
@@ -271,12 +275,20 @@ function recordFinished(won) {
   saveNow();
 }
 
+// A random deal, or with "Winnable deals only" on, one from the checked lists.
+function pickSeed() {
+  if (!settings.winnableOnly) return undefined;
+  const list = settings.drawCount === 3 ? DRAW3 : DRAW1;
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 function startGame(seed) {
   clearCascade();
   const prev = game;
   game = seed !== undefined
     ? E.newGame({ seed, drawCount: prev.drawCount, scoring: prev.scoring })
-    : E.newGame({ drawCount: settings.drawCount, scoring: settings.scoring });
+    : E.newGame({ seed: pickSeed(), drawCount: settings.drawCount, scoring: settings.scoring });
+  sound.play('shuffle');
   game.startedAt = Date.now();
   undo = [];
   // Gather every card on the stock, then deal them out.
@@ -290,8 +302,12 @@ function startGame(seed) {
   });
 }
 
-function apply(next, renderOpts) {
+const hiddenCount = (g) => g.tableau.reduce((n, p) => n + p.filter((c) => !c.up).length, 0);
+
+function apply(next, renderOpts, sfx = 'place') {
   if (!next) return false;
+  if (sfx) sound.play(sfx.name || sfx, sfx);
+  if (hiddenCount(next) < hiddenCount(game)) sound.play('flip', { at: 0.14 });
   undo.push(game);
   game = next;
   render(renderOpts);
@@ -306,12 +322,13 @@ function doDraw() {
   // Deal the new cards one after another so it is clear how many came off the deck.
   const dealt = next.waste.slice(game.waste.length);
   const delays = new Map(dealt.map((c, i) => [c.id, i * 70]));
-  apply(next, { delays });
+  apply(next, { delays }, dealt.length ? { name: 'deal', count: dealt.length } : 'shuffle');
 }
 
 function doUndo() {
   if (!undo.length || busy) return;
   game = undo.pop();
+  sound.play('place');
   render();
 }
 
@@ -324,8 +341,9 @@ function onWin() {
   recordFinished(true);
   const scorePart = game.scoring === 'none' ? '' : ` with a score of ${game.score}`;
   $('win-text').textContent = `You finished in ${game.moves} moves${scorePart}.`;
-  if (!MOVE_MS) { setTimeout(() => show('win'), 400); return; }
+  if (!MOVE_MS) { sound.play('win'); setTimeout(() => show('win'), 400); return; }
   // Let the last card land, cascade the cards off the foundations, then show the result.
+  sound.play('win', { at: 0.3 });
   const total = cascade(MOVE_MS + 150);
   setTimeout(() => show('win'), MOVE_MS + 150 + total - 300);
 }
@@ -700,7 +718,10 @@ function wireControls() {
   });
   $('settings').addEventListener('change', (e) => {
     if (e.target.dataset.setting) {
-      settings[e.target.dataset.setting] = e.target.checked;
+      const key = e.target.dataset.setting;
+      settings[key] = e.target.checked;
+      if (key === 'sound') { sound.setEnabled(settings.sound); sound.play('place'); }
+      if (LOOK_KEYS.includes(key)) applyLook();
       if (e.target.dataset.setting === 'deckOnRight') measure();
       render({ instant: e.target.dataset.setting === 'deckOnRight' ? false : true });
     }

@@ -1,7 +1,7 @@
 // Offline support: keep the game's files on the phone so it opens with no signal.
 // Bump VERSION whenever the app's files change so phones pick up the update.
 
-const VERSION = 'calm-solitaire-v6';
+const VERSION = 'calm-solitaire-v7';
 const APP_FILES = [
   './',
   'index.html',
@@ -9,6 +9,8 @@ const APP_FILES = [
   'src/app.js',
   'src/engine.js',
   'src/storage.js',
+  'src/sound.js',
+  'src/winnable.js',
   'manifest.webmanifest',
   'icons/icon.svg',
   'icons/icon-192.png',

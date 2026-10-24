@@ -176,6 +176,9 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 }
 .face.red { color: var(--red); }
 .face.black { color: var(--black); }
+/* Four-colour suits: diamonds blue and clubs green, so every suit looks different. */
+:root[data-suits="four"] .face.suit-D { color: #2864A8; }
+:root[data-suits="four"] .face.suit-C { color: #26734A; }
 .corner {
   display: flex;
   justify-content: space-between;
