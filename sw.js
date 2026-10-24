@@ -1,7 +1,7 @@
 // Offline support: keep the game's files on the phone so it opens with no signal.
 // Bump VERSION whenever the app's files change so phones pick up the update.
 
-const VERSION = 'calm-solitaire-v8';
+const VERSION = 'calm-solitaire-v9';
 const APP_FILES = [
   './',
   'index.html',
@@ -18,7 +18,7 @@ const APP_FILES = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(APP_FILES)));
+  event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(APP_FILES.map((f) => new Request(f, { cache: 'reload' })))));
   self.skipWaiting();
 });
 
@@ -43,7 +43,8 @@ self.addEventListener('fetch', (event) => {
       const cached = await cache.match(event.request, { ignoreSearch: true });
       if (isFont && cached) return cached;
       try {
-        const res = await fetch(event.request);
+        // GitHub Pages lets browsers keep files for 10 minutes; always check for a newer copy.
+        const res = await fetch(event.request, isFont ? undefined : { cache: 'no-cache' });
         if (res && (res.ok || res.type === 'opaque')) cache.put(event.request, res.clone());
         return res;
       } catch (err) {

@@ -446,3 +446,4 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .swatch[aria-pressed="true"] { color: var(--sheet-ink); }
 .swatch[aria-pressed="true"] .chip, .swatch[aria-pressed="true"] .mini { outline: 3px solid var(--sheet-ink); outline-offset: 2px; }
 :root[data-theme="dark"] .swatch .chip { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }
+.note.version { text-align: center; margin-top: 12px; }
