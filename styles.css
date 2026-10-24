@@ -13,8 +13,30 @@
   --hint: #F2C14E;
   --glass: rgba(255, 255, 255, 0.12);
   --scrim: rgba(20, 30, 25, 0.45);
+  --sheet-ink: #22302A;
+  --accent: #4F6F5F;
   --move-ms: 200ms;
+  color-scheme: light;
   font-family: 'Nunito', system-ui, sans-serif;
+}
+
+/* Dark mode: a deep green-grey table and softly dimmed cards, easy on the eyes at night. */
+:root[data-theme="dark"] {
+  --table: #22312A;
+  --ink-on-table: #E6E8E2;
+  --card: #DAD6CA;
+  --card-edge: #B5AFA1;
+  --card-back: #93604B;
+  --red: #A3322B;
+  --black: #1B2520;
+  --sheet: #1F2A25;
+  --sheet-btn: #2F3E37;
+  --sheet-ink: #E6E8E2;
+  --muted: #A7B2AC;
+  --accent: #5B8871;
+  --glass: rgba(255, 255, 255, 0.08);
+  --scrim: rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -205,7 +227,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 
 .sheet {
   background: var(--sheet);
-  color: var(--black);
+  color: var(--sheet-ink);
   border-radius: 24px 24px 0 0;
   padding: 30px 20px calc(24px + env(safe-area-inset-bottom));
   display: flex;
@@ -225,18 +247,18 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   border: none;
   border-radius: 25px;
   background: var(--sheet-btn);
-  color: var(--black);
+  color: var(--sheet-ink);
   font-size: 19px;
   font-weight: 700;
 }
-.pill-btn.primary, .dlg-btn.primary { background: var(--table); color: #FFFFFF; }
+.pill-btn.primary, .dlg-btn.primary { background: var(--accent); color: #FFFFFF; }
 .close-btn {
   width: 44px;
   height: 44px;
   border: none;
   border-radius: 22px;
   background: var(--sheet-btn);
-  color: var(--black);
+  color: var(--sheet-ink);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -247,7 +269,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 
 .dialog {
   background: var(--sheet);
-  color: var(--black);
+  color: var(--sheet-ink);
   border-radius: 24px;
   padding: 24px;
   width: 100%;
@@ -266,7 +288,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   border: none;
   border-radius: 14px;
   background: var(--sheet-btn);
-  color: var(--black);
+  color: var(--sheet-ink);
   font-size: 17px;
   font-weight: 700;
 }
@@ -281,11 +303,11 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   border: none;
   border-radius: 12px;
   background: transparent;
-  color: var(--black);
+  color: var(--sheet-ink);
   font-size: 16px;
   font-weight: 700;
 }
-.segmented button[aria-pressed="true"] { background: var(--table); color: #FFFFFF; }
+.segmented button[aria-pressed="true"] { background: var(--accent); color: #FFFFFF; }
 .note { margin: 2px 0 6px; font-size: 14px; color: var(--muted); }
 .toggle {
   display: flex;
@@ -296,7 +318,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   font-weight: 700;
   border-top: 1px solid var(--sheet-btn);
 }
-.toggle input { width: 24px; height: 24px; accent-color: var(--table); }
+.toggle input { width: 24px; height: 24px; accent-color: var(--accent); }
 
 /* History */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -320,10 +342,45 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   font-size: 15px;
 }
 .history-list .when { color: var(--muted); }
-.history-list .won { font-weight: 800; color: var(--table); }
+.history-list .won { font-weight: 800; color: var(--accent); }
 .history-empty { color: var(--muted); text-align: center; padding: 16px 0; font-size: 15px; }
 
 @media (prefers-reduced-motion: reduce) {
   :root { --move-ms: 0ms; }
   .card-inner, .overlay, .sheet, .dialog { transition: none; animation: none; }
 }
+
+/* Landscape on a phone: menu and score down the left, tools down the right,
+   so the cards get the full height. */
+@media (orientation: landscape) and (max-height: 600px) {
+  #app {
+    max-width: none;
+    flex-direction: row;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .topbar {
+    width: 96px;
+    height: auto;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+  }
+  .pills { flex-direction: column; align-items: center; }
+  .spacer { display: none; }
+  .toolbar {
+    width: 104px;
+    height: auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 8px;
+  }
+  .tool-btn { width: 80px; }
+  .finish-btn { bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .sheet { width: 100%; max-width: 560px; align-self: center; }
+}
+
+/* A short, calm lift of the finished foundations when you win. */
+.card.cheer .face { box-shadow: 0 0 0 3px var(--hint), 0 8px 18px rgba(0, 0, 0, 0.3); transition: box-shadow 300ms ease; }

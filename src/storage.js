@@ -10,6 +10,7 @@ export const defaultSettings = {
   deckOnRight: true,
   tapToMove: true,
   showMoves: true,
+  appearance: 'auto', // auto follows the phone's light/dark setting
 };
 
 export function load() {

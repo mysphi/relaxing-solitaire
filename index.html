@@ -13,6 +13,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
 <link rel="stylesheet" href="styles.css">
+<script>
+  // Pick light or dark before the first paint so the table never flashes the wrong colour.
+  try {
+    var a = localStorage.getItem('calm-solitaire-appearance') || 'auto';
+    if (a === 'dark' || (a === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.dataset.theme = 'dark';
+    }
+  } catch (e) {}
+</script>
 </head>
 <body>
 <div id="app">
@@ -96,6 +105,14 @@
           <button data-value="standard">Standard</button>
           <button data-value="vegas">Vegas</button>
           <button data-value="none">None</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Appearance</legend>
+        <div class="segmented" data-setting="appearance">
+          <button data-value="auto">Match phone</button>
+          <button data-value="light">Light</button>
+          <button data-value="dark">Dark</button>
         </div>
       </fieldset>
       <label class="toggle">

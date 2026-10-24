@@ -34,6 +34,8 @@ function init() {
       undo = saved.undo;
     }
   }
+  applyAppearance();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyAppearance);
   buildSlots();
   buildCards();
   measure();
@@ -87,6 +89,19 @@ function buildCards() {
   }
 }
 
+// ---------- Light and dark ----------
+
+function applyAppearance() {
+  const a = settings.appearance;
+  const dark = a === 'dark' || (a === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  // Colours the phone's status bar to match the table.
+  const table = getComputedStyle(document.documentElement).getPropertyValue('--table').trim();
+  document.querySelector('meta[name=theme-color]').setAttribute('content', table);
+  // A tiny separate key so index.html can pick the theme before the first paint.
+  try { localStorage.setItem('calm-solitaire-appearance', a); } catch {}
+}
+
 // ---------- Layout ----------
 
 function measure() {
@@ -94,16 +109,20 @@ function measure() {
   const H = board.clientHeight;
   const pad = 10;
   const gap = 6;
-  const cw = (W - pad * 2 - gap * 6) / 7;
+  // In landscape the height is what runs short, so size cards to fit it and centre the columns.
+  const landscape = W > H * 1.3;
+  let cw = (W - pad * 2 - gap * 6) / 7;
+  if (landscape) cw = Math.min(cw, (H - 30) / 3.1 / 1.42);
   const ch = Math.round(cw * 1.42);
+  const left = (W - (cw * 7 + gap * 6)) / 2;
   const topY = 8;
-  const tabY = topY + ch + 18;
+  const tabY = topY + ch + (landscape ? 10 : 18);
   // Deck on the right (easier for a right thumb) mirrors the top row.
   const right = settings.deckOnRight;
   const cols = right
     ? { right, stock: 6, found: [0, 1, 2, 3] }
     : { right, stock: 0, found: [3, 4, 5, 6] };
-  metrics = { W, H, pad, gap, cw, ch, topY, tabY, cols };
+  metrics = { W, H, pad, left, landscape, gap, cw, ch, topY, tabY, cols };
   board.style.setProperty('--cw', cw + 'px');
 
   const place = (el, x, y) => {
@@ -121,7 +140,7 @@ function measure() {
   }
 }
 
-const colX = (i) => metrics.pad + i * (metrics.cw + metrics.gap);
+const colX = (i) => metrics.left + i * (metrics.cw + metrics.gap);
 
 // Where every card sits for a given state: id -> { x, y, z, up }
 function layout(state) {
@@ -154,7 +173,7 @@ function layout(state) {
     let upStep = ch * 0.34;
     const needed = downs * downStep + Math.max(0, ups - 1) * upStep + ch;
     if (needed > avail && ups > 1) {
-      upStep = Math.max(ch * 0.2, (avail - ch - downs * downStep) / (ups - 1));
+      upStep = Math.max(ch * (metrics.landscape ? 0.16 : 0.2), (avail - ch - downs * downStep) / (ups - 1));
     }
     let y = tabY;
     pile.forEach((c, i) => {
@@ -297,7 +316,27 @@ function onWin() {
   recordFinished(true);
   const scorePart = game.scoring === 'none' ? '' : ` with a score of ${game.score}`;
   $('win-text').textContent = `You finished in ${game.moves} moves${scorePart}.`;
-  setTimeout(() => show('win'), MOVE_MS + 400);
+  if (!MOVE_MS) { setTimeout(() => show('win'), 400); return; }
+  // Let the last card land, lift the four kings in a gentle wave, then show the result.
+  setTimeout(winWave, MOVE_MS + 150);
+  setTimeout(() => show('win'), MOVE_MS + 150 + 2100);
+}
+
+function winWave() {
+  const kings = game.foundations.map((pile) => cardEls.get(pile[pile.length - 1].id));
+  kings.forEach((el, i) => {
+    const base = el.style.transform;
+    el.classList.add('cheer');
+    el.animate(
+      [
+        { transform: base },
+        { transform: base + ' translateY(-16px) scale(1.06)' },
+        { transform: base },
+      ],
+      { duration: 640, delay: i * 130, iterations: 3, easing: 'ease-in-out' },
+    );
+  });
+  setTimeout(() => kings.forEach((el) => el.classList.remove('cheer')), 2100);
 }
 
 function autoComplete() {
@@ -623,6 +662,7 @@ function wireControls() {
     if (key === 'scoring' && game.scoring !== settings.scoring) {
       game = E.setScoring(game, settings.scoring);
     }
+    if (key === 'appearance') applyAppearance();
     syncSettingsUI();
     render();
   });
