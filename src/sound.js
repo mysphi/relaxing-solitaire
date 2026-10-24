@@ -150,7 +150,11 @@ function playNow(a, name, opts) {
       for (let i = 0; i < count; i++) place(a, t + i * 0.07, 0.7);
       break;
     case 'shuffle':
-      sample(a, t, 'shuffle', { gain: 0.8 });
+      // Stretch or squeeze the recording slightly so it ends as the deal does.
+      sample(a, t, 'shuffle', {
+        gain: 0.8,
+        rate: samples.shuffle && opts?.duration > 0 ? samples.shuffle.duration / opts.duration : 1,
+      });
       break;
     case 'gather':
       gather(a, t);

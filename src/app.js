@@ -8,6 +8,7 @@ import { DRAW1, DRAW3 } from './winnable.js';
 
 const SUIT_CHAR = { S: '♠︎', H: '♥︎', D: '♦︎', C: '♣︎' };
 const RANK = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const DEAL_STEP_MS = 14; // gap between cards when a new game is dealt
 const MOVE_MS = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 200;
 
 const $ = (id) => document.getElementById(id);
@@ -237,7 +238,7 @@ function render({ instant = false, stagger = false, delays = null } = {}) {
   const pos = layout(game);
   let k = 0;
   for (const [id, p] of pos) {
-    const delay = stagger ? k++ * 14 : (delays && delays.get(id)) || 0;
+    const delay = stagger ? k++ * DEAL_STEP_MS : (delays && delays.get(id)) || 0;
     setCard(cardEls.get(id), p, { instant, delay });
   }
   if (delays) {
@@ -288,7 +289,8 @@ function startGame(seed) {
   game = seed !== undefined
     ? E.newGame({ seed, drawCount: prev.drawCount, scoring: prev.scoring })
     : E.newGame({ seed: pickSeed(), drawCount: settings.drawCount, scoring: settings.scoring });
-  sound.play('shuffle');
+  // The shuffle lasts exactly as long as the deal, until the last card lands.
+  sound.play('shuffle', { duration: (51 * DEAL_STEP_MS + Math.max(MOVE_MS, 200)) / 1000 });
   game.startedAt = Date.now();
   undo = [];
   // Gather every card on the stock, then deal them out.
@@ -298,7 +300,7 @@ function startGame(seed) {
   for (const el of cardEls.values()) el.classList.remove('instant');
   requestAnimationFrame(() => {
     render({ stagger: true });
-    setTimeout(() => { for (const el of cardEls.values()) el.style.transitionDelay = ''; }, 52 * 14 + MOVE_MS);
+    setTimeout(() => { for (const el of cardEls.values()) el.style.transitionDelay = ''; }, 52 * DEAL_STEP_MS + MOVE_MS);
   });
 }
 
