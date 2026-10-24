@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#4F6F5F">
+<meta name="description" content="A calm, relaxing game of Klondike solitaire.">
+<title>Calm Solitaire</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menu-btn" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="pills">
+      <span class="pill" id="score-pill">Score <span id="score">0</span></span>
+      <span class="pill" id="moves-pill">Moves <span id="moves">0</span></span>
+    </div>
+    <div class="spacer"></div>
+  </header>
+
+  <main id="board" aria-label="Solitaire table"></main>
+
+  <button id="finish-btn" class="finish-btn" hidden>Finish game</button>
+
+  <nav class="toolbar">
+    <button class="tool-btn" id="undo-btn" aria-label="Undo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+      <span>Undo</span>
+    </button>
+    <button class="tool-btn" id="hint-btn" aria-label="Hint">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>
+      <span>Hint</span>
+    </button>
+    <button class="tool-btn" id="new-btn" aria-label="New game">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>New game</span>
+    </button>
+  </nav>
+
+  <!-- Menu sheet -->
+  <div class="overlay" id="menu" hidden>
+    <div class="sheet" role="dialog" aria-label="Menu">
+      <div class="sheet-row">
+        <button class="pill-btn primary" data-action="resume">Resume Game</button>
+        <button class="close-btn" data-action="resume" aria-label="Close menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <button class="pill-btn" data-action="new">New Game</button>
+      <button class="pill-btn" data-action="restart">Restart This Deal</button>
+      <button class="pill-btn" data-action="history">Score History</button>
+      <button class="pill-btn" data-action="settings">Settings</button>
+    </div>
+  </div>
+
+  <!-- Confirm dialog (new game / restart) -->
+  <div class="overlay center" id="confirm" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Start a new game?</h2>
+      <p id="confirm-text">Your current game will be lost.</p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="cancel">Keep playing</button>
+        <button class="dlg-btn primary" data-action="ok" id="confirm-ok">New game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="overlay" id="settings" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="settings-title">
+      <div class="sheet-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="close-btn" data-action="close" aria-label="Close settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <fieldset class="setting">
+        <legend>Draw</legend>
+        <div class="segmented" data-setting="drawCount">
+          <button data-value="1">Draw 1</button>
+          <button data-value="3">Draw 3</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Scoring</legend>
+        <div class="segmented" data-setting="scoring">
+          <button data-value="standard">Standard</button>
+          <button data-value="vegas">Vegas</button>
+          <button data-value="none">None</button>
+        </div>
+      </fieldset>
+      <p class="note">Draw and scoring changes start with your next game.</p>
+      <label class="toggle">
+        <span>Tap a card to move it</span>
+        <input type="checkbox" data-setting="tapToMove">
+      </label>
+      <label class="toggle">
+        <span>Show move counter</span>
+        <input type="checkbox" data-setting="showMoves">
+      </label>
+    </div>
+  </div>
+
+  <!-- Score history sheet -->
+  <div class="overlay" id="history" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="history-title">
+      <div class="sheet-head">
+        <h2 id="history-title">Score History</h2>
+        <button class="close-btn" data-action="close" aria-label="Close score history">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <ol class="history-list" id="history-list"></ol>
+    </div>
+  </div>
+
+  <!-- Win -->
+  <div class="overlay center" id="win" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="win-title">
+      <h2 id="win-title">Well played</h2>
+      <p id="win-text"></p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn primary" data-action="again">Play again</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
