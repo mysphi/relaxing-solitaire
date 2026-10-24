@@ -8,6 +8,12 @@ export function setEnabled(on) {
   enabled = on;
 }
 
+// Phones only allow audio to start from a touch, so wake it up on each one.
+export function unlock() {
+  if (!enabled) return;
+  try { audio(); } catch {}
+}
+
 function audio() {
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -56,8 +62,19 @@ function note(freq, at, length = 0.9, gain = 0.07) {
   osc.stop(t + length + 0.05);
 }
 
-export function play(name, { at = 0, count = 1 } = {}) {
+// Sound is a nice extra: if the phone's audio misbehaves, stay quiet and let the game carry on.
+export function play(name, opts) {
   if (!enabled) return;
+  try {
+    playUnsafe(name, opts);
+  } catch {}
+}
+
+function playUnsafe(name, opts) {
+  const a = audio();
+  if (!a || a.state !== 'running' || !Number.isFinite(a.currentTime)) return;
+  const at = Number.isFinite(opts?.at) ? opts.at : 0;
+  const count = Number.isFinite(opts?.count) ? opts.count : 1;
   switch (name) {
     case 'place':
       tap({ freq: 1400, gain: 0.2, at });

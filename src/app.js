@@ -306,11 +306,12 @@ const hiddenCount = (g) => g.tableau.reduce((n, p) => n + p.filter((c) => !c.up)
 
 function apply(next, renderOpts, sfx = 'place') {
   if (!next) return false;
-  if (sfx) sound.play(sfx.name || sfx, sfx);
-  if (hiddenCount(next) < hiddenCount(game)) sound.play('flip', { at: 0.14 });
+  const flipped = hiddenCount(next) < hiddenCount(game);
   undo.push(game);
   game = next;
   render(renderOpts);
+  if (sfx) sound.play(sfx.name || sfx, typeof sfx === 'object' ? sfx : undefined);
+  if (flipped) sound.play('flip', { at: 0.14 });
   if (E.isWon(game)) onWin();
   else if (!busy && E.isStuck(game)) onStuck();
   return true;
@@ -495,6 +496,7 @@ function sourceFor(loc) {
 }
 
 function onPointerDown(e) {
+  sound.unlock();
   if (busy || drag) return;
   const el = e.target.closest('.card:not(.ghost)');
   if (!el) {
