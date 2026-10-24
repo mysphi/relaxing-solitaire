@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   newGame, move, draw, isLegalMove, canAutoComplete, isWon, findHint,
-  bestDestination, nextFoundationMove, SCORING,
+  bestDestination, nextFoundationMove, autoCompleteStep, SCORING,
 } from '../src/engine.js';
 
 const card = (id, up = true) => ({ id, suit: id[0], rank: Number(id.slice(1)), up });
@@ -111,6 +111,22 @@ test('auto-complete only when everything is face up and nothing to draw', () => 
   s.tableau[1][0].up = true;
   assert.ok(canAutoComplete(s));
   assert.equal(nextFoundationMove(s).card.id, 'S1');
+});
+
+test('draw 1 can auto-complete with cards still in the stock, draw 3 cannot', () => {
+  const s = emptyState({ tableau: [[card('S2')], [], [], [], [], [], []], stock: [card('S1', false)] });
+  assert.ok(canAutoComplete(s));
+  assert.ok(!canAutoComplete({ ...s, drawCount: 3 }));
+});
+
+test('auto-complete steps through the stock and finishes the game', () => {
+  const suits = ['S', 'H', 'D', 'C'];
+  // Every card face up in the tableau except the four aces, which wait in the stock.
+  const tableau = suits.map((s) => Array.from({ length: 12 }, (_, i) => card(s + (13 - i))));
+  let s = emptyState({ tableau: [...tableau, [], [], []], stock: suits.map((x) => card(x + 1, false)) });
+  assert.ok(canAutoComplete(s));
+  for (let i = 0; i < 200 && !isWon(s); i++) s = autoCompleteStep(s);
+  assert.ok(isWon(s));
 });
 
 test('win is detected', () => {

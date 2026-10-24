@@ -63,7 +63,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   justify-content: center;
 }
 .pills { display: flex; gap: 8px; font-size: 15px; font-weight: 700; }
-.pill { padding: 6px 12px; border-radius: 999px; background: var(--glass); }
+.pill { padding: 6px 12px; border: none; border-radius: 999px; background: var(--glass); font: inherit; }
 .pill[hidden] { display: none; }
 
 /* Table */

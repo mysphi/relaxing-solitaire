@@ -204,11 +204,21 @@ export function isWon(state) {
   return state.foundations.every((p) => p.length === 13);
 }
 
-// All remaining cards face up with nothing left to draw: the game can finish itself.
+// The game can finish itself once no tableau card is face down. In Draw 1 the
+// stock can still hold cards, since cycling it one at a time reaches every card.
+// In Draw 3 the stock and waste must be empty too.
 export function canAutoComplete(state) {
   if (isWon(state)) return false;
-  if (state.stock.length || state.waste.length) return false;
+  if (state.drawCount !== 1 && (state.stock.length || state.waste.length)) return false;
   return state.tableau.every((p) => p.every((c) => c.up));
+}
+
+// One step of auto-complete: a foundation move if there is one, otherwise a draw.
+export function autoCompleteStep(state) {
+  const m = nextFoundationMove(state);
+  if (m) return move(state, m.from, m.to);
+  if (state.stock.length || state.waste.length) return draw(state);
+  return null;
 }
 
 // One step of auto-complete: the lowest card that can go to a foundation.

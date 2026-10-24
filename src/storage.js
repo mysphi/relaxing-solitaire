@@ -7,6 +7,7 @@ const MAX_HISTORY = 200;
 export const defaultSettings = {
   drawCount: 1,
   scoring: 'standard',
+  deckOnRight: true,
   tapToMove: true,
   showMoves: true,
 };

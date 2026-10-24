@@ -97,7 +97,12 @@ function measure() {
   const ch = Math.round(cw * 1.42);
   const topY = 8;
   const tabY = topY + ch + 18;
-  metrics = { W, H, pad, gap, cw, ch, topY, tabY };
+  // Deck on the right (easier for a right thumb) mirrors the top row.
+  const right = settings.deckOnRight;
+  const cols = right
+    ? { stock: 6, waste: 4, fanDir: 1, found: [0, 1, 2, 3] }
+    : { stock: 0, waste: 1, fanDir: 1, found: [3, 4, 5, 6] };
+  metrics = { W, H, pad, gap, cw, ch, topY, tabY, cols };
   board.style.setProperty('--cw', cw + 'px');
 
   const place = (el, x, y) => {
@@ -106,8 +111,8 @@ function measure() {
     el.style.left = x + 'px';
     el.style.top = y + 'px';
   };
-  place(slots.stock, colX(0), topY);
-  slots.foundations.forEach((f, i) => place(f, colX(3 + i), topY));
+  place(slots.stock, colX(cols.stock), topY);
+  slots.foundations.forEach((f, i) => place(f, colX(cols.found[i]), topY));
   slots.tableau.forEach((t, i) => place(t, colX(i), tabY));
   for (const el of cardEls.values()) {
     el.style.width = cw + 'px';
@@ -119,20 +124,22 @@ const colX = (i) => metrics.pad + i * (metrics.cw + metrics.gap);
 
 // Where every card sits for a given state: id -> { x, y, z, up }
 function layout(state) {
-  const { cw, ch, topY, tabY, H } = metrics;
+  const { cw, ch, topY, tabY, H, cols } = metrics;
   const pos = new Map();
   // Cards buried in a stacked pile get no shadow, otherwise the shadows pile up into a dark halo.
   const flat = (pile, i) => i < pile.length - 2;
-  state.stock.forEach((c, i) => pos.set(c.id, { x: colX(0), y: topY, z: 10 + i, up: false, flat: flat(state.stock, i) }));
+  state.stock.forEach((c, i) => pos.set(c.id, { x: colX(cols.stock), y: topY, z: 10 + i, up: false, flat: flat(state.stock, i) }));
 
   const fanFrom = state.drawCount === 3 ? Math.max(0, state.waste.length - 3) : state.waste.length;
   state.waste.forEach((c, i) => {
     const k = i - fanFrom;
-    pos.set(c.id, { x: colX(1) + (k > 0 ? k * cw * 0.3 : 0), y: topY, z: 100 + i, up: true, flat: k < 0 && flat(state.waste, i) });
+    // In Draw 3 the last three cards fan out so you can see all three; only the top one moves.
+    const shift = k > 0 ? k * cw * 0.42 * cols.fanDir : 0;
+    pos.set(c.id, { x: colX(cols.waste) + shift, y: topY, z: 100 + i, up: true, flat: k < 0 && flat(state.waste, i) });
   });
 
   state.foundations.forEach((pile, f) => {
-    pile.forEach((c, i) => pos.set(c.id, { x: colX(3 + f), y: topY, z: 200 + i, up: true, flat: flat(pile, i) }));
+    pile.forEach((c, i) => pos.set(c.id, { x: colX(cols.found[f]), y: topY, z: 200 + i, up: true, flat: flat(pile, i) }));
   });
 
   const avail = H - tabY - 10;
@@ -192,11 +199,15 @@ function setCard(el, p, { instant = false, delay = 0 } = {}) {
   }
 }
 
-function render({ instant = false, stagger = false } = {}) {
+function render({ instant = false, stagger = false, delays = null } = {}) {
   const pos = layout(game);
   let k = 0;
   for (const [id, p] of pos) {
-    setCard(cardEls.get(id), p, { instant, delay: stagger ? k++ * 14 : 0 });
+    const delay = stagger ? k++ * 14 : (delays && delays.get(id)) || 0;
+    setCard(cardEls.get(id), p, { instant, delay });
+  }
+  if (delays) {
+    setTimeout(() => { for (const id of delays.keys()) cardEls.get(id).style.transitionDelay = ''; }, MOVE_MS + 300);
   }
   if (instant) {
     void board.offsetWidth;
@@ -210,7 +221,7 @@ function render({ instant = false, stagger = false } = {}) {
 function updateChrome() {
   $('score').textContent = game.score;
   $('moves').textContent = game.moves;
-  $('score-pill').hidden = game.scoring === 'none';
+  $('score-pill').hidden = game.scoring === 'none' || settings.scoring === 'none';
   $('moves-pill').hidden = !settings.showMoves;
   $('undo-btn').disabled = undo.length === 0 || busy;
   $('finish-btn').hidden = busy || !E.canAutoComplete(game);
@@ -232,7 +243,7 @@ function startGame(seed) {
     : E.newGame({ drawCount: settings.drawCount, scoring: settings.scoring });
   undo = [];
   // Gather every card on the stock, then deal them out.
-  const stockPos = { x: colX(0), y: metrics.topY, z: 10, up: false };
+  const stockPos = { x: colX(metrics.cols.stock), y: metrics.topY, z: 10, up: false };
   for (const el of cardEls.values()) setCard(el, stockPos, { instant: true });
   void board.offsetWidth;
   for (const el of cardEls.values()) el.classList.remove('instant');
@@ -242,17 +253,22 @@ function startGame(seed) {
   });
 }
 
-function apply(next) {
+function apply(next, renderOpts) {
   if (!next) return false;
   undo.push(game);
   game = next;
-  render();
+  render(renderOpts);
   if (E.isWon(game)) onWin();
   return true;
 }
 
 function doDraw() {
-  apply(E.draw(game));
+  const next = E.draw(game);
+  if (!next) return;
+  // Deal the new cards one after another so it is clear how many came off the deck.
+  const dealt = next.waste.slice(game.waste.length);
+  const delays = new Map(dealt.map((c, i) => [c.id, i * 70]));
+  apply(next, { delays });
 }
 
 function doUndo() {
@@ -272,14 +288,15 @@ function onWin() {
 function autoComplete() {
   busy = true;
   updateChrome();
+  let guard = 400;
   const step = () => {
-    const m = E.nextFoundationMove(game);
-    if (!m || E.isWon(game)) {
+    const next = !E.isWon(game) && guard-- > 0 && E.autoCompleteStep(game);
+    if (!next) {
       busy = false;
       updateChrome();
       return;
     }
-    apply(E.move(game, m.from, m.to));
+    apply(next);
     if (!E.isWon(game)) setTimeout(step, 110);
     else { busy = false; updateChrome(); }
   };
@@ -356,7 +373,7 @@ function nudge(el) {
   const base = el.style.transform || '';
   el.animate(
     [{ transform: base }, { transform: base + ' translateX(-5px)' }, { transform: base + ' translateX(5px)' }, { transform: base }],
-    { duration: 260 },
+    { duration: 160 },
   );
 }
 
@@ -431,7 +448,7 @@ function onPointerUp() {
 }
 
 function dropTarget(x, y, from) {
-  const { cw, ch, gap, pad, tabY } = metrics;
+  const { cw, ch, gap, pad, tabY, cols } = metrics;
   const cx = x + cw / 2;
   const cy = y + ch / 2;
   const nearest = [0, 1, 2, 3, 4, 5, 6].sort(
@@ -440,8 +457,9 @@ function dropTarget(x, y, from) {
   if (cy < tabY) {
     // Top row: any foundation that takes the card, nearest first.
     for (const col of nearest) {
-      if (col < 3) continue;
-      const to = { pile: 'foundation', index: col - 3 };
+      const f = cols.found.indexOf(col);
+      if (f < 0) continue;
+      const to = { pile: 'foundation', index: f };
       if (E.isLegalMove(game, from, to)) return to;
     }
     return null;
@@ -528,6 +546,9 @@ function wireControls() {
   board.addEventListener('pointercancel', () => { if (drag) { drag.els.forEach((el) => el.classList.remove('dragging')); drag = null; render(); } });
 
   $('menu-btn').addEventListener('click', () => show('menu'));
+  for (const id of ['score-pill', 'moves-pill']) {
+    $(id).addEventListener('click', () => { renderHistory(); show('history'); });
+  }
   $('undo-btn').addEventListener('click', doUndo);
   $('hint-btn').addEventListener('click', showHint);
   $('new-btn').addEventListener('click', askNewGame);
@@ -565,14 +586,18 @@ function wireControls() {
     if (!b) return;
     const key = b.closest('.segmented').dataset.setting;
     settings[key] = key === 'drawCount' ? Number(b.dataset.value) : b.dataset.value;
+    // Draw 1 or 3 is safe to switch mid-game; scoring waits for the next game.
+    if (key === 'drawCount' && game.drawCount !== settings.drawCount) {
+      game = { ...game, drawCount: settings.drawCount };
+    }
     syncSettingsUI();
-    scheduleSave();
+    render();
   });
   $('settings').addEventListener('change', (e) => {
     if (e.target.dataset.setting) {
       settings[e.target.dataset.setting] = e.target.checked;
-      updateChrome();
-      scheduleSave();
+      if (e.target.dataset.setting === 'deckOnRight') measure();
+      render({ instant: e.target.dataset.setting === 'deckOnRight' ? false : true });
     }
   });
 

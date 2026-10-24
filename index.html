@@ -21,8 +21,8 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
     <div class="pills">
-      <span class="pill" id="score-pill">Score <span id="score">0</span></span>
-      <span class="pill" id="moves-pill">Moves <span id="moves">0</span></span>
+      <button class="pill" id="score-pill" aria-label="Score, open score history">Score <span id="score">0</span></button>
+      <button class="pill" id="moves-pill" aria-label="Moves, open score history">Moves <span id="moves">0</span></button>
     </div>
     <div class="spacer"></div>
   </header>
@@ -98,7 +98,11 @@
           <button data-value="none">None</button>
         </div>
       </fieldset>
-      <p class="note">Draw and scoring changes start with your next game.</p>
+      <p class="note">Scoring changes start with your next game.</p>
+      <label class="toggle">
+        <span>Deck on the right</span>
+        <input type="checkbox" data-setting="deckOnRight">
+      </label>
       <label class="toggle">
         <span>Tap a card to move it</span>
         <input type="checkbox" data-setting="tapToMove">

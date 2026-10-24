@@ -1,7 +1,7 @@
 // Offline support: keep the game's files on the phone so it opens with no signal.
 // Bump VERSION whenever the app's files change so phones pick up the update.
 
-const VERSION = 'calm-solitaire-v1';
+const VERSION = 'calm-solitaire-v2';
 const APP_FILES = [
   './',
   'index.html',
@@ -28,7 +28,8 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Serve from the cache straight away, and refresh the cache in the background.
+// Try the network first so updates show up straight away, and fall back to the
+// saved copy when there's no signal. Fonts are served from the cache first.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
@@ -38,13 +39,15 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.open(VERSION).then(async (cache) => {
       const cached = await cache.match(event.request, { ignoreSearch: true });
-      const network = fetch(event.request)
-        .then((res) => {
-          if (res && (res.ok || res.type === 'opaque')) cache.put(event.request, res.clone());
-          return res;
-        })
-        .catch(() => cached);
-      return cached || network;
+      if (isFont && cached) return cached;
+      try {
+        const res = await fetch(event.request);
+        if (res && (res.ok || res.type === 'opaque')) cache.put(event.request, res.clone());
+        return res;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     }),
   );
 });
