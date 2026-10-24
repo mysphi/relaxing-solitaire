@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   newGame, move, draw, isLegalMove, canAutoComplete, isWon, findHint,
-  bestDestination, nextFoundationMove, autoCompleteStep, SCORING,
+  bestDestination, nextFoundationMove, autoCompleteStep, setScoring, SCORING,
 } from '../src/engine.js';
 
 const card = (id, up = true) => ({ id, suit: id[0], rank: Number(id.slice(1)), up });
@@ -12,7 +12,7 @@ function emptyState(extra = {}) {
     seed: 1, drawCount: 1, scoring: SCORING.standard,
     stock: [], waste: [], foundations: [[], [], [], []],
     tableau: [[], [], [], [], [], [], []],
-    score: 0, moves: 0, passes: 0, ...extra,
+    score: 0, standard: 0, vegas: -52, moves: 0, passes: 0, ...extra,
   };
 }
 
@@ -96,13 +96,23 @@ test('standard score never drops below zero', () => {
 test('vegas starts at -52 and pays 5 per foundation card', () => {
   const s = newGame({ seed: 1, scoring: SCORING.vegas });
   assert.equal(s.score, -52);
-  const t = emptyState({ scoring: SCORING.vegas, score: -52, waste: [card('D1')] });
+  const t = emptyState({ scoring: SCORING.vegas, score: -52, vegas: -52, waste: [card('D1')] });
   assert.equal(move(t, { pile: 'waste' }, { pile: 'foundation', index: 2 }).score, -47);
 });
 
 test('no-scoring mode keeps score at zero', () => {
   const s = emptyState({ scoring: SCORING.none, waste: [card('D1')] });
   assert.equal(move(s, { pile: 'waste' }, { pile: 'foundation', index: 0 }).score, 0);
+});
+
+test('switching scoring to none and back restores the score exactly', () => {
+  const s = emptyState({ waste: [card('H1')] });
+  const a = move(s, { pile: 'waste' }, { pile: 'foundation', index: 0 });
+  assert.equal(a.score, 10);
+  const none = setScoring(a, SCORING.none);
+  assert.equal(none.score, 0);
+  assert.equal(setScoring(none, SCORING.standard).score, 10);
+  assert.equal(setScoring(none, SCORING.vegas).score, -47);
 });
 
 test('auto-complete only when everything is face up and nothing to draw', () => {

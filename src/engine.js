@@ -63,6 +63,9 @@ export function newGame({ seed = Date.now() >>> 0, drawCount = 1, scoring = SCOR
     waste: [],
     foundations: [[], [], [], []],
     tableau,
+    // Both scores are kept all game, so switching scoring mode mid-game is exact.
+    standard: 0,
+    vegas: -52,
     score: scoring === SCORING.vegas ? -52 : 0,
     moves: 0,
     passes: 0,
@@ -70,6 +73,7 @@ export function newGame({ seed = Date.now() >>> 0, drawCount = 1, scoring = SCOR
 }
 
 export function clone(state) {
+  state = withScores(state);
   return {
     ...state,
     stock: state.stock.map((c) => ({ ...c })),
@@ -133,10 +137,32 @@ export function isLegalMove(state, from, to) {
   return false;
 }
 
-function addScore(state, points) {
-  if (state.scoring === SCORING.none) return;
-  state.score += points;
-  if (state.scoring === SCORING.standard && state.score < 0) state.score = 0;
+// Saved games from before both scores were tracked only have `score`.
+function withScores(state) {
+  if (state.standard !== undefined && state.vegas !== undefined) return state;
+  return {
+    ...state,
+    standard: state.scoring === SCORING.standard ? state.score : 0,
+    vegas: state.scoring === SCORING.vegas ? state.score : -52 + 5 * state.foundations.flat().length,
+  };
+}
+
+function shownScore(state) {
+  if (state.scoring === SCORING.vegas) return state.vegas;
+  if (state.scoring === SCORING.none) return 0;
+  return state.standard;
+}
+
+function award(state, standardPts, vegasPts) {
+  state.standard = Math.max(0, state.standard + standardPts);
+  state.vegas += vegasPts;
+  state.score = shownScore(state);
+}
+
+export function setScoring(state, scoring) {
+  const s = { ...withScores(state), scoring };
+  s.score = shownScore(s);
+  return s;
 }
 
 function standardPoints(from, to) {
@@ -161,18 +187,14 @@ export function move(state, from, to) {
   const dest = to.pile === 'foundation' ? s.foundations[to.index] : s.tableau[to.index];
   dest.push(...cards);
 
-  if (s.scoring === SCORING.standard) addScore(s, standardPoints(from, to));
-  if (s.scoring === SCORING.vegas) {
-    if (to.pile === 'foundation') addScore(s, 5);
-    if (from.pile === 'foundation') addScore(s, -5);
-  }
+  award(s, standardPoints(from, to), (to.pile === 'foundation' ? 5 : 0) - (from.pile === 'foundation' ? 5 : 0));
 
   // Turn over the newly exposed card.
   if (from.pile === 'tableau') {
     const t = top(s.tableau[from.index]);
     if (t && !t.up) {
       t.up = true;
-      if (s.scoring === SCORING.standard) addScore(s, 5);
+      award(s, 5, 0);
     }
   }
   s.moves += 1;
@@ -187,7 +209,7 @@ export function draw(state) {
     s.stock = s.waste.reverse().map((c) => ({ ...c, up: false }));
     s.waste = [];
     s.passes += 1;
-    if (s.scoring === SCORING.standard) addScore(s, s.drawCount === 1 ? -100 : -20);
+    award(s, s.drawCount === 1 ? -100 : -20, 0);
   } else {
     const n = Math.min(s.drawCount, s.stock.length);
     for (let i = 0; i < n; i++) {

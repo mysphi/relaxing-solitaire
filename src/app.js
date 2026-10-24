@@ -100,8 +100,8 @@ function measure() {
   // Deck on the right (easier for a right thumb) mirrors the top row.
   const right = settings.deckOnRight;
   const cols = right
-    ? { stock: 6, waste: 4, fanDir: 1, found: [0, 1, 2, 3] }
-    : { stock: 0, waste: 1, fanDir: 1, found: [3, 4, 5, 6] };
+    ? { right, stock: 6, found: [0, 1, 2, 3] }
+    : { right, stock: 0, found: [3, 4, 5, 6] };
   metrics = { W, H, pad, gap, cw, ch, topY, tabY, cols };
   board.style.setProperty('--cw', cw + 'px');
 
@@ -134,8 +134,11 @@ function layout(state) {
   state.waste.forEach((c, i) => {
     const k = i - fanFrom;
     // In Draw 3 the last three cards fan out so you can see all three; only the top one moves.
-    const shift = k > 0 ? k * cw * 0.42 * cols.fanDir : 0;
-    pos.set(c.id, { x: colX(cols.waste) + shift, y: topY, z: 100 + i, up: true, flat: k < 0 && flat(state.waste, i) });
+    // With the deck on the right, Draw 1 sits right beside it; the Draw 3 fan starts
+    // one column further left so it can spread towards the deck.
+    const wasteCol = cols.right ? (state.drawCount === 3 ? 4 : 5) : 1;
+    const shift = k > 0 ? k * cw * 0.42 : 0;
+    pos.set(c.id, { x: colX(wasteCol) + shift, y: topY, z: 100 + i, up: true, flat: k < 0 && flat(state.waste, i) });
   });
 
   state.foundations.forEach((pile, f) => {
@@ -221,7 +224,7 @@ function render({ instant = false, stagger = false, delays = null } = {}) {
 function updateChrome() {
   $('score').textContent = game.score;
   $('moves').textContent = game.moves;
-  $('score-pill').hidden = game.scoring === 'none' || settings.scoring === 'none';
+  $('score-pill').hidden = game.scoring === 'none';
   $('moves-pill').hidden = !settings.showMoves;
   $('undo-btn').disabled = undo.length === 0 || busy;
   $('finish-btn').hidden = busy || !E.canAutoComplete(game);
@@ -586,9 +589,12 @@ function wireControls() {
     if (!b) return;
     const key = b.closest('.segmented').dataset.setting;
     settings[key] = key === 'drawCount' ? Number(b.dataset.value) : b.dataset.value;
-    // Draw 1 or 3 is safe to switch mid-game; scoring waits for the next game.
+    // Both apply to the current game straight away.
     if (key === 'drawCount' && game.drawCount !== settings.drawCount) {
       game = { ...game, drawCount: settings.drawCount };
+    }
+    if (key === 'scoring' && game.scoring !== settings.scoring) {
+      game = E.setScoring(game, settings.scoring);
     }
     syncSettingsUI();
     render();
