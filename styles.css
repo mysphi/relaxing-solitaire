@@ -98,6 +98,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   will-change: transform;
 }
 .card.dragging, .card.instant { transition: none; }
+#board.fast .card { transition-duration: 110ms; }
 .card-inner {
   position: absolute;
   inset: 0;
@@ -302,7 +303,15 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .stat { background: var(--sheet-btn); border-radius: 14px; padding: 10px 6px; text-align: center; }
 .stat b { display: block; font-size: 20px; font-weight: 800; }
 .stat span { font-size: 12px; color: var(--muted); font-weight: 700; }
-.history-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.history-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  /* Five games visible, scroll for older ones. */
+  max-height: calc(5 * 47px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .history-list li {
   display: flex;
   justify-content: space-between;

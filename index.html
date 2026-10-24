@@ -127,6 +127,18 @@
     </div>
   </div>
 
+  <!-- Out of moves -->
+  <div class="overlay center" id="stuck" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="stuck-title">
+      <h2 id="stuck-title">No moves left</h2>
+      <p>There's nothing more to play in this deal. You can undo and try another way, or start a new game.</p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="undo">Undo</button>
+        <button class="dlg-btn primary" data-action="new">New game</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Win -->
   <div class="overlay center" id="win" hidden>
     <div class="dialog" role="dialog" aria-labelledby="win-title">

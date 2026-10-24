@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   newGame, move, draw, isLegalMove, canAutoComplete, isWon, findHint,
-  bestDestination, nextFoundationMove, autoCompleteStep, setScoring, SCORING,
+  bestDestination, nextFoundationMove, autoCompleteStep, setScoring, isStuck, SCORING,
 } from '../src/engine.js';
 
 const card = (id, up = true) => ({ id, suit: id[0], rank: Number(id.slice(1)), up });
@@ -170,4 +170,29 @@ test('a whole random game of drawing and auto moves stays consistent', () => {
     assert.equal(all.length, 52);
     assert.equal(new Set(all.map((c) => c.id)).size, 52);
   }
+});
+
+test('stuck when nothing in the deck or columns can be played', () => {
+  const s = emptyState({
+    tableau: [[card('S5', false), card('H9')], [card('D9')], [], [], [], [], []],
+    stock: [card('C3', false)],
+  });
+  assert.ok(isStuck(s));
+});
+
+test('not stuck while a deck card can be played', () => {
+  const s = emptyState({
+    tableau: [[card('S5', false), card('H9')], [], [], [], [], [], []],
+    stock: [card('C8', false), card('D2', false)],
+  });
+  assert.ok(!isStuck(s));
+});
+
+test('not stuck when a move would turn over a hidden card', () => {
+  const s = emptyState({ tableau: [[card('S5', false), card('H9')], [card('C10')], [], [], [], [], []] });
+  assert.ok(!isStuck(s));
+});
+
+test('a fresh deal is not stuck', () => {
+  assert.ok(!isStuck(newGame({ seed: 11 })));
 });

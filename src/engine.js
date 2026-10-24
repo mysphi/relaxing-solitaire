@@ -323,3 +323,50 @@ export function findHint(state) {
   if (state.stock.length || state.waste.length) return { draw: true };
   return null;
 }
+
+// Every waste card you could reach by drawing through the stock without playing anything.
+export function reachableStockCards(state) {
+  const seen = new Map();
+  let s = clone(state);
+  const total = s.stock.length + s.waste.length;
+  if (!total) return [];
+  if (s.waste.length) seen.set(s.waste[s.waste.length - 1].id, s.waste[s.waste.length - 1]);
+  // Two full passes is enough to see every card that will ever be on top.
+  for (let i = 0; i < total * 2 + 4; i++) {
+    s = draw(s);
+    if (!s) break;
+    const t = s.waste[s.waste.length - 1];
+    if (t) seen.set(t.id, t);
+  }
+  return [...seen.values()];
+}
+
+// True when nothing useful is left to do: no card can reach a foundation, no move
+// turns over a face-down card or frees a card for a foundation, and no card in the
+// deck can be played anywhere. Shuffling runs between columns doesn't count.
+export function isStuck(state) {
+  if (isWon(state)) return false;
+  if (nextFoundationMove(state)) return false;
+
+  for (let i = 0; i < 7; i++) {
+    const pile = state.tableau[i];
+    const firstUp = pile.findIndex((c) => c.up);
+    if (firstUp < 0) continue;
+    for (let k = firstUp; k < pile.length; k++) {
+      const from = { pile: 'tableau', index: i, cardIndex: k };
+      const exposesHidden = k === firstUp && k > 0;
+      const freesForFoundation = k > firstUp && state.foundations.some((f) => canPlaceOnFoundation(pile[k - 1], f));
+      const kingToEmpty = k === firstUp && k > 0 && pile[k].rank === 13;
+      if (!exposesHidden && !freesForFoundation && !kingToEmpty) continue;
+      for (let j = 0; j < 7; j++) {
+        if (j !== i && isLegalMove(state, from, { pile: 'tableau', index: j })) return false;
+      }
+    }
+  }
+
+  for (const c of reachableStockCards(state)) {
+    if (state.foundations.some((f) => canPlaceOnFoundation(c, f))) return false;
+    if (state.tableau.some((p) => canPlaceOnTableau(c, p))) return false;
+  }
+  return true;
+}

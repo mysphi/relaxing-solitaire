@@ -30,6 +30,7 @@ function init() {
     history = saved.history;
     if (saved.game && !E.isWon(saved.game)) {
       game = saved.game;
+      if (!game.startedAt) game.startedAt = Date.now();
       undo = saved.undo;
     }
   }
@@ -232,18 +233,24 @@ function updateChrome() {
 
 // ---------- Game flow ----------
 
-function recordUnfinished() {
-  if (game && game.moves > 0 && !E.isWon(game)) {
-    history.push({ at: Date.now(), won: false, score: game.score, moves: game.moves, drawCount: game.drawCount, scoring: game.scoring });
-  }
+// Only finished games are logged: won, or out of moves. Both scores are kept so
+// Score History can show whichever scoring mode is selected. If a game that ran
+// out of moves is later won after undoing, its entry is replaced.
+function recordFinished(won) {
+  if (!game.startedAt) game.startedAt = Date.now();
+  const key = `${game.seed}-${game.startedAt}`;
+  const g = E.setScoring(game, 'standard');
+  history = history.filter((h) => h.key !== key);
+  history.push({ key, at: Date.now(), won, moves: game.moves, standard: g.standard, vegas: g.vegas, drawCount: game.drawCount });
+  saveNow();
 }
 
 function startGame(seed) {
-  recordUnfinished();
   const prev = game;
   game = seed !== undefined
     ? E.newGame({ seed, drawCount: prev.drawCount, scoring: prev.scoring })
     : E.newGame({ drawCount: settings.drawCount, scoring: settings.scoring });
+  game.startedAt = Date.now();
   undo = [];
   // Gather every card on the stock, then deal them out.
   const stockPos = { x: colX(metrics.cols.stock), y: metrics.topY, z: 10, up: false };
@@ -262,6 +269,7 @@ function apply(next, renderOpts) {
   game = next;
   render(renderOpts);
   if (E.isWon(game)) onWin();
+  else if (!busy && E.isStuck(game)) onStuck();
   return true;
 }
 
@@ -280,9 +288,13 @@ function doUndo() {
   render();
 }
 
+function onStuck() {
+  recordFinished(false);
+  setTimeout(() => show('stuck'), MOVE_MS + 300);
+}
+
 function onWin() {
-  history.push({ at: Date.now(), won: true, score: game.score, moves: game.moves, drawCount: game.drawCount, scoring: game.scoring });
-  saveNow();
+  recordFinished(true);
   const scorePart = game.scoring === 'none' ? '' : ` with a score of ${game.score}`;
   $('win-text').textContent = `You finished in ${game.moves} moves${scorePart}.`;
   setTimeout(() => show('win'), MOVE_MS + 400);
@@ -290,18 +302,20 @@ function onWin() {
 
 function autoComplete() {
   busy = true;
+  board.classList.add('fast');
   updateChrome();
   let guard = 400;
   const step = () => {
     const next = !E.isWon(game) && guard-- > 0 && E.autoCompleteStep(game);
     if (!next) {
       busy = false;
+      board.classList.remove('fast');
       updateChrome();
       return;
     }
     apply(next);
-    if (!E.isWon(game)) setTimeout(step, 110);
-    else { busy = false; updateChrome(); }
+    if (!E.isWon(game)) setTimeout(step, 40);
+    else { busy = false; board.classList.remove('fast'); updateChrome(); }
   };
   step();
 }
@@ -516,30 +530,43 @@ function syncSettingsUI() {
   });
 }
 
+// Score for a history entry in the selected mode. Older entries only kept the
+// score of the mode they were played in.
+function entryScore(h, mode) {
+  if (h[mode] !== undefined) return h[mode];
+  return h.scoring === mode ? h.score : null;
+}
+
 function renderHistory() {
-  const played = history.length;
-  const wins = history.filter((h) => h.won);
-  const scored = wins.filter((h) => h.scoring !== 'none').map((h) => h.score);
+  const mode = settings.scoring;
+  const showScores = mode !== 'none';
+  const done = history.filter((h) => h.won || h.key); // skip old abandoned-game entries
+  const wins = done.filter((h) => h.won);
+  const scored = showScores ? wins.map((h) => entryScore(h, mode)).filter((v) => v !== null) : [];
   let streak = 0;
-  for (let i = history.length - 1; i >= 0 && history[i].won; i--) streak++;
+  for (let i = done.length - 1; i >= 0 && done[i].won; i--) streak++;
   const stat = (value, label) => `<div class="stat"><b>${value}</b><span>${label}</span></div>`;
+  $('stats').style.gridTemplateColumns = `repeat(${showScores ? 4 : 3}, minmax(0, 1fr))`;
   $('stats').innerHTML =
-    stat(played, 'Played') + stat(wins.length, 'Won') +
-    stat(scored.length ? Math.max(...scored) : '–', 'Best score') + stat(streak, 'Win streak');
+    stat(done.length, 'Played') + stat(wins.length, 'Won') +
+    (showScores ? stat(scored.length ? Math.max(...scored) : '–', mode === 'vegas' ? 'Best (Vegas)' : 'Best score') : '') +
+    stat(streak, 'Win streak');
 
   const list = $('history-list');
   list.innerHTML = '';
-  if (!played) {
+  if (!done.length) {
     list.innerHTML = '<li class="history-empty">Finished games will appear here.</li>';
     return;
   }
   const fmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-  for (const h of history.slice(-50).reverse()) {
+  for (const h of done.slice().reverse()) {
     const li = document.createElement('li');
-    const score = h.scoring === 'none' ? '' : `Score ${h.score} · `;
-    li.innerHTML = `<span><span class="${h.won ? 'won' : ''}">${h.won ? 'Won' : 'Not finished'}</span> <span class="when">${fmt.format(h.at)}</span></span><span>${score}${h.moves} moves</span>`;
+    const sc = showScores ? entryScore(h, mode) : null;
+    const score = sc === null ? '' : `Score ${sc} · `;
+    li.innerHTML = `<span><span class="${h.won ? 'won' : ''}">${h.won ? 'Won' : 'No moves'}</span> <span class="when">${fmt.format(h.at)}</span></span><span>${score}${h.moves} moves</span>`;
     list.appendChild(li);
   }
+  list.scrollTop = 0;
 }
 
 function wireControls() {
@@ -559,7 +586,7 @@ function wireControls() {
 
   // Tapping the dimmed area closes a sheet.
   document.querySelectorAll('.overlay').forEach((o) => {
-    o.addEventListener('click', (e) => { if (e.target === o && o.id !== 'win') o.hidden = true; });
+    o.addEventListener('click', (e) => { if (e.target === o && o.id !== 'win' && o.id !== 'stuck') o.hidden = true; });
   });
 
   $('menu').addEventListener('click', (e) => {
@@ -605,6 +632,14 @@ function wireControls() {
       if (e.target.dataset.setting === 'deckOnRight') measure();
       render({ instant: e.target.dataset.setting === 'deckOnRight' ? false : true });
     }
+  });
+
+  $('stuck').addEventListener('click', (e) => {
+    const action = e.target.closest('[data-action]')?.dataset.action;
+    if (!action) return;
+    hide('stuck');
+    if (action === 'undo') doUndo();
+    if (action === 'new') startGame();
   });
 
   $('win').addEventListener('click', (e) => {
