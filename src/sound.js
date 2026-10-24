@@ -15,9 +15,10 @@ export function setEnabled(on) {
 }
 
 // Phones only allow audio to start from a touch, so wake it up on each one.
+// It also retries loading the recordings if an earlier attempt failed.
 export function unlock() {
   if (!enabled) return;
-  try { audio(); } catch {}
+  try { audio(); preload(); } catch {}
 }
 
 // Fetch and decode the recordings once. The audio can be created (paused)
@@ -37,7 +38,7 @@ function preload() {
 
 function sample(a, t, name, { gain = 1, rate = 1 } = {}) {
   const buf = samples[name];
-  if (!buf) return;
+  if (!buf) return false;
   const src = a.createBufferSource();
   src.buffer = buf;
   src.playbackRate.value = rate;
@@ -45,6 +46,7 @@ function sample(a, t, name, { gain = 1, rate = 1 } = {}) {
   g.gain.value = gain;
   src.connect(g).connect(a.destination);
   src.start(t);
+  return true;
 }
 
 function audio() {
@@ -88,7 +90,10 @@ function burst(a, t, { length, type = 'bandpass', freq, freqEnd = freq, q = 0.7,
 // Setting a card down: the recording, with a touch of variation each time
 // so repeated moves don't sound identical.
 function place(a, t, loud = 1) {
-  sample(a, t, 'down', { gain: 0.8 * loud, rate: 0.94 + Math.random() * 0.12 });
+  if (sample(a, t, 'down', { gain: 0.8 * loud, rate: 0.94 + Math.random() * 0.12 })) return;
+  // Until the recording has loaded: a light, high papery tap with no low end.
+  burst(a, t, { length: 0.05, type: 'highpass', freq: 2000, freqEnd: 3500, q: 0.5, gain: 0.05 * loud, attack: 0.012 });
+  burst(a, t + 0.035, { length: 0.03, freq: 3500, q: 0.8, gain: 0.09 * loud });
 }
 
 // Turning a card over: a quick, light flick.

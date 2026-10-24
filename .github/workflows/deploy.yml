@@ -37,7 +37,16 @@ jobs:
       - name: Collect the site files
         run: |
           mkdir _site
-          cp -r index.html styles.css sw.js manifest.webmanifest src icons _site/
+          cp -r index.html styles.css sw.js manifest.webmanifest src icons sounds _site/
+      - name: Check every offline file is in the site
+        run: |
+          node -e "
+            const fs = require('fs');
+            const list = fs.readFileSync('sw.js', 'utf8').match(/APP_FILES = \[([\s\S]*?)\]/)[1].match(/'([^']+)'/g).map((s) => s.slice(1, -1));
+            const missing = list.filter((f) => f !== './' && !fs.existsSync('_site/' + f));
+            if (missing.length) { console.error('Missing from site:', missing); process.exit(1); }
+            console.log('All', list.length, 'offline files present');
+          "
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
       - id: deployment
