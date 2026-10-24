@@ -34,8 +34,8 @@ function init() {
       undo = saved.undo;
     }
   }
-  applyAppearance();
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyAppearance);
+  applyLook();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyLook);
   buildSlots();
   buildCards();
   measure();
@@ -89,17 +89,24 @@ function buildCards() {
   }
 }
 
-// ---------- Light and dark ----------
+// ---------- Look: light/dark, table colour, card back ----------
 
-function applyAppearance() {
+const LOOK_KEYS = ['appearance', 'table', 'back'];
+
+function applyLook() {
+  const root = document.documentElement;
   const a = settings.appearance;
   const dark = a === 'dark' || (a === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  root.dataset.theme = dark ? 'dark' : 'light';
+  root.dataset.table = settings.table;
+  root.dataset.back = settings.back;
   // Colours the phone's status bar to match the table.
-  const table = getComputedStyle(document.documentElement).getPropertyValue('--table').trim();
+  const table = getComputedStyle(root).getPropertyValue('--table').trim();
   document.querySelector('meta[name=theme-color]').setAttribute('content', table);
-  // A tiny separate key so index.html can pick the theme before the first paint.
-  try { localStorage.setItem('calm-solitaire-appearance', a); } catch {}
+  // A tiny separate key so index.html can apply the look before the first paint.
+  try {
+    localStorage.setItem('calm-solitaire-look', JSON.stringify({ appearance: a, table: settings.table, back: settings.back }));
+  } catch {}
 }
 
 // ---------- Layout ----------
@@ -265,6 +272,7 @@ function recordFinished(won) {
 }
 
 function startGame(seed) {
+  clearCascade();
   const prev = game;
   game = seed !== undefined
     ? E.newGame({ seed, drawCount: prev.drawCount, scoring: prev.scoring })
@@ -317,26 +325,50 @@ function onWin() {
   const scorePart = game.scoring === 'none' ? '' : ` with a score of ${game.score}`;
   $('win-text').textContent = `You finished in ${game.moves} moves${scorePart}.`;
   if (!MOVE_MS) { setTimeout(() => show('win'), 400); return; }
-  // Let the last card land, lift the four kings in a gentle wave, then show the result.
-  setTimeout(winWave, MOVE_MS + 150);
-  setTimeout(() => show('win'), MOVE_MS + 150 + 2100);
+  // Let the last card land, cascade the cards off the foundations, then show the result.
+  const total = cascade(MOVE_MS + 150);
+  setTimeout(() => show('win'), MOVE_MS + 150 + total - 300);
 }
 
-function winWave() {
-  const kings = game.foundations.map((pile) => cardEls.get(pile[pile.length - 1].id));
-  kings.forEach((el, i) => {
-    const base = el.style.transform;
-    el.classList.add('cheer');
-    el.animate(
-      [
-        { transform: base },
-        { transform: base + ' translateY(-16px) scale(1.06)' },
-        { transform: base },
-      ],
-      { duration: 640, delay: i * 130, iterations: 3, easing: 'ease-in-out' },
-    );
-  });
-  setTimeout(() => kings.forEach((el) => el.classList.remove('cheer')), 2100);
+// Cards leave the foundations one at a time, kings first, and drift down off
+// the table in soft arcs, fading as they go. Returns how long it takes in ms.
+let cascadeAnims = [];
+function cascade(startDelay) {
+  const { H, ch } = metrics;
+  const STEP = 45;
+  const FLIGHT = 1100;
+  board.classList.add('cascading');
+  let k = 0;
+  for (let rank = 12; rank >= 0; rank--) {
+    for (let f = 0; f < 4; f++) {
+      const c = game.foundations[f][rank];
+      if (!c) continue;
+      const el = cardEls.get(c.id);
+      const x = el._x;
+      const y = el._y;
+      const dx = (Math.random() - 0.5) * metrics.W * 0.8;
+      const spin = (Math.random() - 0.5) * 50;
+      const anim = el.animate(
+        [
+          { transform: `translate(${x}px, ${y}px)`, opacity: 1, easing: 'ease-out' },
+          { transform: `translate(${x + dx * 0.4}px, ${y - ch * 0.35}px) rotate(${spin * 0.3}deg)`, opacity: 1, offset: 0.25, easing: 'ease-in' },
+          { transform: `translate(${x + dx}px, ${H + ch * 0.2}px) rotate(${spin}deg)`, opacity: 0.85, offset: 0.85 },
+          { transform: `translate(${x + dx}px, ${H + ch * 0.6}px) rotate(${spin}deg)`, opacity: 0 },
+        ],
+        { duration: FLIGHT, delay: startDelay + k * STEP, fill: 'both' },
+      );
+      el.style.zIndex = 1500 + k;
+      cascadeAnims.push(anim);
+      k++;
+    }
+  }
+  return (k - 1) * STEP + FLIGHT;
+}
+
+function clearCascade() {
+  cascadeAnims.forEach((a) => a.cancel());
+  board.classList.remove('cascading');
+  cascadeAnims = [];
 }
 
 function autoComplete() {
@@ -558,7 +590,7 @@ function askRestart() {
 }
 
 function syncSettingsUI() {
-  document.querySelectorAll('#settings .segmented').forEach((seg) => {
+  document.querySelectorAll('#settings .segmented, #settings .swatches').forEach((seg) => {
     const key = seg.dataset.setting;
     seg.querySelectorAll('button').forEach((b) => {
       b.setAttribute('aria-pressed', String(String(settings[key]) === b.dataset.value));
@@ -651,9 +683,9 @@ function wireControls() {
   }
 
   $('settings').addEventListener('click', (e) => {
-    const b = e.target.closest('.segmented button');
+    const b = e.target.closest('.segmented button, .swatches button');
     if (!b) return;
-    const key = b.closest('.segmented').dataset.setting;
+    const key = b.closest('[data-setting]').dataset.setting;
     settings[key] = key === 'drawCount' ? Number(b.dataset.value) : b.dataset.value;
     // Both apply to the current game straight away.
     if (key === 'drawCount' && game.drawCount !== settings.drawCount) {
@@ -662,7 +694,7 @@ function wireControls() {
     if (key === 'scoring' && game.scoring !== settings.scoring) {
       game = E.setScoring(game, settings.scoring);
     }
-    if (key === 'appearance') applyAppearance();
+    if (LOOK_KEYS.includes(key)) applyLook();
     syncSettingsUI();
     render();
   });

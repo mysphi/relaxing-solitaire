@@ -26,7 +26,6 @@
   --ink-on-table: #E6E8E2;
   --card: #DAD6CA;
   --card-edge: #B5AFA1;
-  --card-back: #93604B;
   --red: #A3322B;
   --black: #1B2520;
   --sheet: #1F2A25;
@@ -38,6 +37,35 @@
   --scrim: rgba(0, 0, 0, 0.55);
   color-scheme: dark;
 }
+
+/* Table colours. Each has a light and a dark version; .tb-* classes let the
+   settings previews show a colour without switching the whole app. */
+:root[data-table="slate"], .tb-slate { --table: #4A5D73; --accent: #4A5D73; }
+:root[data-table="sand"], .tb-sand { --table: #8A7358; --accent: #8A7358; }
+:root[data-table="plum"], .tb-plum { --table: #6B4F63; --accent: #6B4F63; }
+.tb-sage { --table: #4F6F5F; --accent: #4F6F5F; }
+:root[data-theme="dark"] .tb-sage { --table: #22312A; --accent: #5B8871; }
+:root[data-theme="dark"][data-table="slate"], :root[data-theme="dark"] .tb-slate { --table: #1F2833; --accent: #5A7591; }
+:root[data-theme="dark"][data-table="sand"], :root[data-theme="dark"] .tb-sand { --table: #2E271F; --accent: #8C7558; }
+:root[data-theme="dark"][data-table="plum"], :root[data-theme="dark"] .tb-plum { --table: #2B1F28; --accent: #8A6680; }
+
+/* Card backs, drawn with CSS so there are no image files to load. */
+:root, .bk-terracotta { --card-back: #C98B6B; --back-pattern: none; }
+:root[data-back="stripe"], .bk-stripe {
+  --card-back: #6F8F7E;
+  --back-pattern: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.22) 0 3px, transparent 3px 9px);
+}
+:root[data-back="dots"], .bk-dots {
+  --card-back: #4F6A86;
+  --back-pattern: radial-gradient(circle, rgba(255, 255, 255, 0.3) 1.6px, transparent 2px) 0 0 / 9px 9px;
+}
+:root[data-back="lattice"], .bk-lattice {
+  --card-back: #8A6680;
+  --back-pattern:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 1.5px, transparent 1.5px 10px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.18) 0 1.5px, transparent 1.5px 10px);
+}
+:root[data-theme="dark"] .back { filter: brightness(0.78); }
 
 * { box-sizing: border-box; }
 
@@ -121,6 +149,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 }
 .card.dragging, .card.instant { transition: none; }
 #board.fast .card { transition-duration: 110ms; }
+#board.cascading { clip-path: inset(-200px -200px 0 -200px); } /* cards drop off the bottom of the table */
 .card-inner {
   position: absolute;
   inset: 0;
@@ -157,7 +186,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .corner .s { font-size: calc(var(--cw) * 0.28); }
 .pip { text-align: center; font-size: calc(var(--cw) * 0.5); line-height: 1; padding-bottom: 2px; }
 .back {
-  background: var(--card-back);
+  background: var(--back-pattern, none), var(--card-back);
   border: 3px solid var(--card);
   transform: rotateY(180deg);
 }
@@ -382,5 +411,35 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   .sheet { width: 100%; max-width: 560px; align-self: center; }
 }
 
-/* A short, calm lift of the finished foundations when you win. */
-.card.cheer .face { box-shadow: 0 0 0 3px var(--hint), 0 8px 18px rgba(0, 0, 0, 0.3); transition: box-shadow 300ms ease; }
+/* Theme pickers in Settings */
+.swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.swatch {
+  border: none;
+  background: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.swatch .chip {
+  width: 100%;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--table);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.swatch .mini {
+  width: 40px;
+  height: 56px;
+  border-radius: 6px;
+  border: 3px solid var(--card);
+  background: var(--back-pattern, none), var(--card-back);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.swatch[aria-pressed="true"] { color: var(--sheet-ink); }
+.swatch[aria-pressed="true"] .chip, .swatch[aria-pressed="true"] .mini { outline: 3px solid var(--sheet-ink); outline-offset: 2px; }
+:root[data-theme="dark"] .swatch .chip { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); }

@@ -11,6 +11,8 @@ export const defaultSettings = {
   tapToMove: true,
   showMoves: true,
   appearance: 'auto', // auto follows the phone's light/dark setting
+  table: 'sage',
+  back: 'terracotta',
 };
 
 export function load() {

@@ -14,12 +14,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
 <link rel="stylesheet" href="styles.css">
 <script>
-  // Pick light or dark before the first paint so the table never flashes the wrong colour.
+  // Apply light/dark, table colour and card back before the first paint, so nothing flashes.
   try {
-    var a = localStorage.getItem('calm-solitaire-appearance') || 'auto';
-    if (a === 'dark' || (a === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.dataset.theme = 'dark';
-    }
+    var look = JSON.parse(localStorage.getItem('calm-solitaire-look') || '{}');
+    var a = look.appearance || 'auto', root = document.documentElement;
+    if (a === 'dark' || (a === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) root.dataset.theme = 'dark';
+    if (look.table) root.dataset.table = look.table;
+    if (look.back) root.dataset.back = look.back;
   } catch (e) {}
 </script>
 </head>
@@ -113,6 +114,24 @@
           <button data-value="auto">Match phone</button>
           <button data-value="light">Light</button>
           <button data-value="dark">Dark</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Table colour</legend>
+        <div class="swatches" data-setting="table">
+          <button class="swatch" data-value="sage"><span class="chip tb-sage"></span>Sage</button>
+          <button class="swatch" data-value="slate"><span class="chip tb-slate"></span>Slate</button>
+          <button class="swatch" data-value="sand"><span class="chip tb-sand"></span>Sand</button>
+          <button class="swatch" data-value="plum"><span class="chip tb-plum"></span>Plum</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Card back</legend>
+        <div class="swatches" data-setting="back">
+          <button class="swatch" data-value="terracotta"><span class="mini bk-terracotta"></span>Terracotta</button>
+          <button class="swatch" data-value="stripe"><span class="mini bk-stripe"></span>Stripe</button>
+          <button class="swatch" data-value="dots"><span class="mini bk-dots"></span>Dots</button>
+          <button class="swatch" data-value="lattice"><span class="mini bk-lattice"></span>Lattice</button>
         </div>
       </fieldset>
       <label class="toggle">
