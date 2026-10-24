@@ -323,7 +323,7 @@ function doDraw() {
   // Deal the new cards one after another so it is clear how many came off the deck.
   const dealt = next.waste.slice(game.waste.length);
   const delays = new Map(dealt.map((c, i) => [c.id, i * 70]));
-  apply(next, { delays }, dealt.length ? { name: 'deal', count: dealt.length } : 'shuffle');
+  apply(next, { delays }, dealt.length ? { name: 'deal', count: dealt.length } : 'gather');
 }
 
 function doUndo() {
