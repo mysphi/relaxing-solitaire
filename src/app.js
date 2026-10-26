@@ -38,6 +38,7 @@ function init() {
     }
   }
   applyLook();
+  sound.setVolume(settings.volume);
   sound.setEnabled(settings.sound);
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyLook);
   buildSlots();
@@ -621,6 +622,8 @@ function syncSettingsUI() {
   document.querySelectorAll('#settings input[type=checkbox]').forEach((cb) => {
     cb.checked = !!settings[cb.dataset.setting];
   });
+  $('volume').value = settings.volume;
+  $('volume-row').classList.toggle('off', !settings.sound);
 }
 
 // Score for a history entry in the selected mode. Older entries only kept the
@@ -720,11 +723,19 @@ function wireControls() {
     syncSettingsUI();
     render();
   });
+  // The volume follows your finger, and plays a card sound when you let go.
+  $('volume').addEventListener('input', (e) => {
+    settings.volume = Number(e.target.value);
+    sound.setVolume(settings.volume);
+    scheduleSave();
+  });
+  $('volume').addEventListener('change', () => sound.play('place'));
+
   $('settings').addEventListener('change', (e) => {
-    if (e.target.dataset.setting) {
+    if (e.target.dataset.setting && e.target.type === 'checkbox') {
       const key = e.target.dataset.setting;
       settings[key] = e.target.checked;
-      if (key === 'sound') { sound.setEnabled(settings.sound); sound.play('place'); }
+      if (key === 'sound') { sound.setEnabled(settings.sound); sound.play('place'); syncSettingsUI(); }
       if (LOOK_KEYS.includes(key)) applyLook();
       if (e.target.dataset.setting === 'deckOnRight') measure();
       render({ instant: e.target.dataset.setting === 'deckOnRight' ? false : true });

@@ -14,6 +14,7 @@ export const defaultSettings = {
   table: 'sage',
   back: 'terracotta',
   sound: false,
+  volume: 70,
   fourColour: false,
   winnableOnly: false,
 };

@@ -1,7 +1,7 @@
 {
-  "name": "Calm Solitaire",
-  "short_name": "Solitaire",
-  "description": "A calm, relaxing game of Klondike solitaire.",
+  "name": "Relaxing Solitaire",
+  "short_name": "Relaxing Solitaire",
+  "description": "A calm, ad-free game of Klondike solitaire.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -9,9 +9,9 @@
   "background_color": "#4F6F5F",
   "theme_color": "#4F6F5F",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ]
 }

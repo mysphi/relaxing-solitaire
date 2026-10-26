@@ -4,10 +4,19 @@
 // so nothing here has any low, woody body to it. Off unless enabled.
 
 let ctx = null;
+let master = null;
+let volume = 1;
 let enabled = false;
 let noiseBuf = null;
 const samples = {};
 const SAMPLE_FILES = { down: 'card-down.m4a', shuffle: 'shuffle.m4a' };
+
+// Volume from the Settings slider, 0 to 100. 70 is the level the sounds were
+// tuned at; the curve makes the low end of the slider finer, as ears expect.
+export function setVolume(v) {
+  volume = Math.pow(Math.max(0, Math.min(100, v)) / 70, 1.6);
+  if (master) master.gain.value = volume;
+}
 
 export function setEnabled(on) {
   enabled = on;
@@ -44,7 +53,7 @@ function sample(a, t, name, { gain = 1, rate = 1 } = {}) {
   src.playbackRate.value = rate;
   const g = a.createGain();
   g.gain.value = gain;
-  src.connect(g).connect(a.destination);
+  src.connect(g).connect(out(a));
   src.start(t);
   return true;
 }
@@ -57,6 +66,16 @@ function audio() {
   }
   if (ctx.state === 'suspended') ctx.resume();
   return ctx;
+}
+
+// Every sound goes through one volume control on its way out.
+function out(a) {
+  if (!master) {
+    master = a.createGain();
+    master.gain.value = volume;
+    master.connect(a.destination);
+  }
+  return master;
 }
 
 // One second of white noise, made once and reused for every sound.
@@ -83,7 +102,7 @@ function burst(a, t, { length, type = 'bandpass', freq, freqEnd = freq, q = 0.7,
   g.gain.setValueAtTime(0.0001, t);
   g.gain.exponentialRampToValueAtTime(gain, t + attack);
   g.gain.exponentialRampToValueAtTime(0.0001, t + length);
-  src.connect(filter).connect(g).connect(a.destination);
+  src.connect(filter).connect(g).connect(out(a));
   src.start(t, Math.random() * 0.8, length + 0.02);
 }
 
@@ -117,7 +136,7 @@ function note(a, t, freq, length = 0.9, gain = 0.07) {
   g.gain.setValueAtTime(0, t);
   g.gain.linearRampToValueAtTime(gain, t + 0.02);
   g.gain.exponentialRampToValueAtTime(0.0001, t + length);
-  osc.connect(g).connect(a.destination);
+  osc.connect(g).connect(out(a));
   osc.start(t);
   osc.stop(t + length + 0.05);
 }

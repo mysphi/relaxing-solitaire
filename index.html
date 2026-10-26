@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#4F6F5F">
-<meta name="description" content="A calm, relaxing game of Klondike solitaire.">
-<title>Calm Solitaire</title>
+<meta name="description" content="Relaxing Solitaire: a calm, ad-free game of Klondike solitaire.">
+<title>Relaxing Solitaire</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
@@ -143,6 +143,10 @@
         <span>Card sounds</span>
         <input type="checkbox" data-setting="sound">
       </label>
+      <label class="slider" id="volume-row">
+        <span>Sound volume</span>
+        <input type="range" id="volume" min="0" max="100" step="5" aria-label="Sound volume">
+      </label>
       <label class="toggle">
         <span>Winnable deals only</span>
         <input type="checkbox" data-setting="winnableOnly">
@@ -160,7 +164,7 @@
         <span>Show move counter</span>
         <input type="checkbox" data-setting="showMoves">
       </label>
-      <p class="note version">Version 13</p>
+      <p class="note version">Version 14</p>
     </div>
   </div>
 

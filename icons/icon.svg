@@ -1,6 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="22" fill="#4F6F5F"/>
-  <rect x="25" y="24" width="34" height="48" rx="4" fill="#C98B6B" stroke="#FBF9F4" stroke-width="2.5"/>
-  <rect x="41" y="28" width="34" height="48" rx="4" fill="#FBF9F4" stroke="#DCD5C6"/>
-  <path d="M58 60c-7-5-11-9-11-13a4.5 4.5 0 0 1 11-2a4.5 4.5 0 0 1 11 2c0 4-4 8-11 13z" fill="#B8372F"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6F9381"/>
+      <stop offset="1" stop-color="#3E5C4E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.36" r="0.5">
+      <stop offset="0" stop-color="#F6E7C8" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#F6E7C8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#D49A7A"/>
+      <stop offset="1" stop-color="#B9785A"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#1E2E27" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect id="bgrect" width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="200" r="210" fill="url(#glow)"/>
+  <!-- Three cards fanned from a point below, like a hand being laid down. -->
+  <g filter="url(#shadow)" transform="translate(244 400)">
+    <g transform="rotate(-16)">
+      <rect x="-78" y="-250" width="156" height="220" rx="18" fill="url(#back)" stroke="#FBF9F4" stroke-width="9"/>
+      <rect x="-56" y="-228" width="112" height="176" rx="10" fill="none" stroke="#FBF9F4" stroke-opacity="0.35" stroke-width="3"/>
+    </g>
+    <g transform="rotate(0)">
+      <rect x="-78" y="-262" width="156" height="220" rx="18" fill="url(#back)" stroke="#FBF9F4" stroke-width="9"/>
+      <rect x="-56" y="-240" width="112" height="176" rx="10" fill="none" stroke="#FBF9F4" stroke-opacity="0.35" stroke-width="3"/>
+    </g>
+    <g transform="rotate(16)">
+      <rect x="-78" y="-250" width="156" height="220" rx="18" fill="#FBF9F4" stroke="#E4DCCB" stroke-width="3"/>
+      <text x="-56" y="-196" font-family="Nunito, Arial Rounded MT Bold, Arial, sans-serif" font-weight="800" font-size="46" fill="#B8372F">A</text>
+      <path transform="translate(0 -128) scale(2.3)" d="M0 18c-12-8-19-15-19-22a9 9 0 0 1 19-4a9 9 0 0 1 19 4c0 7-7 14-19 22z" fill="#B8372F"/>
+    </g>
+  </g>
 </svg>

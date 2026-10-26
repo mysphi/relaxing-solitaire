@@ -1,7 +1,7 @@
 // Offline support: keep the game's files on the phone so it opens with no signal.
 // Bump VERSION whenever the app's files change so phones pick up the update.
 
-const VERSION = 'calm-solitaire-v13';
+const VERSION = 'calm-solitaire-v14';
 const APP_FILES = [
   './',
   'index.html',
@@ -17,6 +17,8 @@ const APP_FILES = [
   'icons/icon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',
+  'icons/icon-maskable-512.png',
+  'icons/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {
