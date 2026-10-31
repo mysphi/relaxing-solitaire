@@ -223,6 +223,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   font-weight: 700;
 }
 .tool-btn:disabled { opacity: 0.45; }
+.toolbar.swap { flex-direction: row-reverse; }
 
 .finish-btn {
   position: absolute;
@@ -409,6 +410,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
     gap: 12px;
     padding: 0 8px;
   }
+  .toolbar.swap { flex-direction: column; }
   .tool-btn { width: 80px; }
   .finish-btn { bottom: calc(16px + env(safe-area-inset-bottom)); }
   .sheet { width: 100%; max-width: 560px; align-self: center; }

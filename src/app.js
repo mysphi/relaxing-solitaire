@@ -132,6 +132,8 @@ function measure() {
   const tabY = topY + ch + (landscape ? 10 : 18);
   // Deck on the right (easier for a right thumb) mirrors the top row.
   const right = settings.deckOnRight;
+  // Keep Undo under the thumb that works the deck: on the right when the deck is.
+  document.querySelector('.toolbar').classList.toggle('swap', right);
   const cols = right
     ? { right, stock: 6, found: [0, 1, 2, 3] }
     : { right, stock: 0, found: [3, 4, 5, 6] };
