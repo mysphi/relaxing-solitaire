@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#4F6F5F">
+<meta name="description" content="Relaxing Mines: a calm, ad-free mine-clearing puzzle with no timer.">
+<title>Relaxing Mines</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>
+  // Apply light/dark and board colour before the first paint, so nothing flashes.
+  try {
+    var look = JSON.parse(localStorage.getItem('relaxing-mines-look') || '{}');
+    var a = look.appearance || 'auto', root = document.documentElement;
+    if (a === 'dark' || (a === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) root.dataset.theme = 'dark';
+    if (look.table) root.dataset.table = look.table;
+  } catch (e) {}
+</script>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menu-btn" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="pills">
+      <button class="pill" id="mines-pill" aria-label="Mines left, open stats">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Mines <span id="mines-left">0</span>
+      </button>
+      <button class="pill" id="moves-pill" aria-label="Moves, open stats">Moves <span id="moves">0</span></button>
+    </div>
+    <div class="spacer"></div>
+  </header>
+  <div class="board-label" id="board-label"></div>
+
+  <main id="board-wrap" aria-label="Minefield">
+    <div id="grid" role="grid"></div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <nav class="toolbar" aria-label="Game controls">
+    <button class="tool-btn" id="undo-btn" aria-label="Undo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+      <span>Undo</span>
+    </button>
+    <button class="tool-btn" id="hint-btn" aria-label="Hint">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>
+      <span>Hint</span>
+    </button>
+    <button class="tool-btn" id="flag-btn" aria-label="Flag mode" aria-pressed="false">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4"/><path d="M6.5 4.5l11 4.2-11 4.3z"/></svg>
+      <span id="flag-label">Flag</span>
+    </button>
+    <button class="tool-btn" id="new-btn" aria-label="New game">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>New game</span>
+    </button>
+  </nav>
+
+  <!-- Menu -->
+  <div class="overlay" id="menu" hidden>
+    <div class="sheet" role="dialog" aria-label="Menu">
+      <div class="sheet-row">
+        <button class="pill-btn primary" data-action="resume">Resume Game</button>
+        <button class="close-btn" data-action="resume" aria-label="Close menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <button class="pill-btn" data-action="new">New Game</button>
+      <button class="pill-btn" data-action="restart">Restart This Board</button>
+      <button class="pill-btn" data-action="stats">Stats and History</button>
+      <button class="pill-btn" data-action="settings">Settings</button>
+      <button class="pill-btn" data-action="howto">How to Play</button>
+    </div>
+  </div>
+
+  <!-- Confirm -->
+  <div class="overlay center" id="confirm" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Start a new game?</h2>
+      <p id="confirm-text">This board will be lost and won't count in your stats.</p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="cancel">Keep playing</button>
+        <button class="dlg-btn primary" data-action="ok" id="confirm-ok">New game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hit a mine -->
+  <div class="overlay low" id="lost" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="lost-title">
+      <h2 id="lost-title">That one was a mine</h2>
+      <p>No harm done. Step back with Undo and try another cell, or start a fresh board.</p>
+      <p class="small" id="lost-note">Games where you use Undo don't count towards your stats.</p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="new">New game</button>
+        <button class="dlg-btn primary" data-action="undo">Undo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Board cleared -->
+  <div class="overlay low" id="won" hidden>
+    <div class="dialog centred" role="dialog" aria-labelledby="won-title">
+      <svg class="leaf" width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21c-4-3-7-6.5-7-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 7 3.5C19 14.5 16 18 12 21z" fill="currentColor"/><path d="M12 21V11" stroke="var(--sheet)" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <h2 id="won-title">Board cleared</h2>
+      <p id="won-text"></p>
+      <p class="small" id="won-best"></p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="stats">See stats</button>
+        <button class="dlg-btn primary" data-action="new">New game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="overlay" id="settings" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="settings-title">
+      <div class="sheet-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="close-btn" data-action="close" aria-label="Close settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <fieldset class="setting">
+        <legend>Difficulty</legend>
+        <div class="segmented tall-seg" data-setting="difficulty">
+          <button data-value="easy">Easy<small>9×9 · 10 mines</small></button>
+          <button data-value="medium">Medium<small>12×16 · 30 mines</small></button>
+          <button data-value="hard">Hard<small>12×30 · 80 mines</small></button>
+        </div>
+      </fieldset>
+      <label class="toggle">
+        <span>No-guessing boards<small>Every board can be solved by logic. Turn off for more challenge. Starts from your next board.</small></span>
+        <input type="checkbox" data-setting="noGuess">
+      </label>
+      <label class="toggle">
+        <span>Tap numbers to open around flags<small>Opens the neighbours of a number that has all its flags.</small></span>
+        <input type="checkbox" data-setting="chording">
+      </label>
+      <label class="toggle">
+        <span>Question marks<small>Long-press cycles flag, question mark, then blank.</small></span>
+        <input type="checkbox" data-setting="questionMarks">
+      </label>
+      <label class="toggle">
+        <span>Vibrate on flag<small>A tiny buzz when a flag is placed.</small></span>
+        <input type="checkbox" data-setting="vibrate">
+      </label>
+      <label class="toggle">
+        <span>Show move counter<small>Stats still count moves.</small></span>
+        <input type="checkbox" data-setting="showMoves">
+      </label>
+      <fieldset class="setting">
+        <legend>Appearance</legend>
+        <div class="segmented" data-setting="appearance">
+          <button data-value="auto">Match phone</button>
+          <button data-value="light">Light</button>
+          <button data-value="dark">Dark</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Board colour</legend>
+        <div class="swatches" data-setting="table">
+          <button class="swatch" data-value="sage"><span class="chip tb-sage"></span>Sage</button>
+          <button class="swatch" data-value="slate"><span class="chip tb-slate"></span>Slate</button>
+          <button class="swatch" data-value="sand"><span class="chip tb-sand"></span>Sand</button>
+          <button class="swatch" data-value="plum"><span class="chip tb-plum"></span>Plum</button>
+        </div>
+      </fieldset>
+      <p class="note version">Version 3</p>
+    </div>
+  </div>
+
+  <!-- Stats and history -->
+  <div class="overlay" id="stats" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="stats-title">
+      <div class="sheet-head">
+        <h2 id="stats-title">Stats and History</h2>
+        <button class="close-btn" data-action="close" aria-label="Close stats">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="segmented" id="stats-tabs">
+        <button data-value="easy">Easy</button>
+        <button data-value="medium">Medium</button>
+        <button data-value="hard">Hard</button>
+      </div>
+      <div class="stat-grid" id="stat-grid"></div>
+      <p class="note">Only finished games without Undo count. Time is never recorded.</p>
+      <h3 class="list-head">Recent games</h3>
+      <ol class="history-list" id="history-list"></ol>
+    </div>
+  </div>
+
+  <!-- How to play -->
+  <div class="overlay" id="howto" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="howto-title">
+      <div class="sheet-head">
+        <h2 id="howto-title">How to Play</h2>
+        <button class="close-btn" data-action="close" aria-label="Close how to play">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="howto">
+        <p><b>The goal:</b> open every cell that isn't a mine. There's no clock, so take your time.</p>
+        <p><b>Tap</b> a cell to open it. Your first tap is always safe and opens up an area.</p>
+        <p><b>Numbers</b> tell you how many of the 8 cells around them hide a mine.</p>
+        <p><b>Long-press</b> a cell to flag a mine you've found. Long-press again for a question mark, then blank.</p>
+        <p><b>Flag mode</b> swaps the two, so a tap flags and a long-press opens. Handy for one hand.</p>
+        <p><b>Tap a number</b> that already has all its flags to open the rest of its neighbours in one go.</p>
+        <p><b>Hint</b> shows a cell that logic says is safe. <b>Undo</b> steps back, even after hitting a mine, but that game won't count in your stats.</p>
+        <p><b>No-guessing boards</b> (on by default) can always be solved by logic, so you never have to guess.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
