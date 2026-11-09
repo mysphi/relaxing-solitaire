@@ -51,8 +51,7 @@ html, body {
 }
 
 .hub-head { text-align: center; }
-.hub-head h1 { margin: 0 0 8px; font-size: 32px; font-weight: 800; letter-spacing: 0.2px; }
-.hub-head p { margin: 0 auto; max-width: 300px; font-size: 16px; font-weight: 500; opacity: 0.85; line-height: 1.4; }
+.hub-head h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 0.2px; }
 
 .games { display: flex; flex-direction: column; gap: 14px; }
 .game {
@@ -74,4 +73,4 @@ html, body {
 .game-status { font-size: 15px; font-weight: 600; color: var(--muted); }
 .chev { flex: none; color: var(--muted); }
 
-.foot { margin: 0; text-align: center; font-size: 13px; font-weight: 600; opacity: 0.7; line-height: 1.6; }
+.game-status[hidden] { display: none; }
