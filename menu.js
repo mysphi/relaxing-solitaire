@@ -8,22 +8,25 @@ function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
 function solitaireStatus() {
   const g = read('calm-solitaire-v1')?.game;
   if (!g || !g.foundations || g.foundations.every((p) => p.length === 13)) return null;
-  if (!g.moves) return 'New deal ready';
-  return 'In progress, ' + plural(g.moves, 'move');
+  if (!g.moves) return null;
+  return 'In progress · ' + plural(g.moves, 'move');
 }
 
 function minesStatus() {
   const g = read('relaxing-mines-v1')?.game;
   if (!g || !g.started || g.won || g.lost >= 0) return null;
   const level = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }[g.difficulty] || '';
-  return level + ' board in progress, ' + plural(g.moves, 'move');
+  return level + ' · ' + plural(g.moves, 'move');
 }
 
 function showStatus() {
   const s = solitaireStatus();
   const m = minesStatus();
-  if (s) document.getElementById('solitaire-status').textContent = s;
-  if (m) document.getElementById('mines-status').textContent = m;
+  for (const [id, text] of [['solitaire-status', s], ['mines-status', m]]) {
+    const el = document.getElementById(id);
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
 }
 
 showStatus();
