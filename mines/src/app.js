@@ -4,6 +4,7 @@ import {
   newGame, tap, cycleMark, minesLeft, snapshot, restore, restart, findHint, isOver,
 } from './engine.js';
 import { load, save, fresh } from './storage.js';
+import { setupHome } from '../../common/nav.js';
 
 const LONG_PRESS_MS = 380;
 const MOVE_SLOP = 10; // px a finger can drift before a press becomes a scroll
@@ -472,11 +473,12 @@ function drawStats() {
 }
 
 // ---------- Start ----------
+setupHome({ game: 'mines', save: persist });
 applyLook();
 buildGrid();
 render();
 if (isOver(g)) showEndDialog();
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => { /* offline support is a bonus */ });
+  navigator.serviceWorker.register('../sw.js').catch(() => { /* offline support is a bonus */ });
 }

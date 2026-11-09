@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#4F6F5F">
 <meta name="description" content="Relaxing Mines: a calm, ad-free mine-clearing puzzle with no timer.">
 <title>Relaxing Mines</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="game-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
@@ -36,7 +36,9 @@
       </button>
       <button class="pill" id="moves-pill" aria-label="Moves, open stats">Moves <span id="moves">0</span></button>
     </div>
-    <div class="spacer"></div>
+    <button class="icon-btn" id="home-btn" data-home aria-label="Back to the main menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>
+    </button>
   </header>
   <div class="board-label" id="board-label"></div>
 
@@ -79,6 +81,7 @@
       <button class="pill-btn" data-action="stats">Stats and History</button>
       <button class="pill-btn" data-action="settings">Settings</button>
       <button class="pill-btn" data-action="howto">How to Play</button>
+      <button class="pill-btn" data-action="home" data-home>Main Menu</button>
     </div>
   </div>
 
@@ -175,7 +178,7 @@
           <button class="swatch" data-value="plum"><span class="chip tb-plum"></span>Plum</button>
         </div>
       </fieldset>
-      <p class="note version">Version 3</p>
+      <p class="note version">Version 4</p>
     </div>
   </div>
 

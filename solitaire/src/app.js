@@ -5,6 +5,7 @@ import * as E from './engine.js';
 import * as store from './storage.js';
 import * as sound from './sound.js';
 import { DRAW1, DRAW3 } from './winnable.js';
+import { setupHome } from '../../common/nav.js';
 
 const SUIT_CHAR = { S: '♠︎', H: '♥︎', D: '♦︎', C: '♣︎' };
 const RANK = ['', 'A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -50,9 +51,10 @@ function init() {
   wireControls();
   window.addEventListener('resize', () => { measure(); render({ instant: true }); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+  setupHome({ game: 'solitaire', save: saveNow });
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('../sw.js').catch(() => {});
   }
 }
 

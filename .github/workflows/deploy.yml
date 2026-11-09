@@ -37,7 +37,8 @@ jobs:
       - name: Collect the site files
         run: |
           mkdir _site
-          cp -r index.html styles.css sw.js manifest.webmanifest src icons sounds _site/
+          cp -r index.html menu.css menu.js sw.js manifest.webmanifest common icons solitaire mines _site/
+          rm -rf _site/*/tests _site/*/tools
       - name: Check every offline file is in the site
         run: |
           node -e "
