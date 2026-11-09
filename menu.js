@@ -30,6 +30,12 @@ function showStatus() {
 }
 
 showStatus();
+
+// Open a game in place of the menu, so there is only ever one screen to go back from.
+document.querySelectorAll('a.game').forEach((a) => a.addEventListener('click', (e) => {
+  e.preventDefault();
+  location.replace(a.href);
+}));
 // Coming back from a game with the Back button can reuse this page, so refresh then too.
 window.addEventListener('pageshow', showStatus);
 

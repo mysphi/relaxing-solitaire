@@ -7,5 +7,5 @@ Keep user-facing text in the app minimal. Don't add explanatory lines, taglines,
 ## Working on this repo
 
 - Plain HTML, CSS and JavaScript, no build step. See README.md for the layout.
-- When files change, bump `VERSION` in `sw.js` and list any new file in `APP_FILES`.
+- When files change, bump `VERSION` in `sw.js` (and the matching "Version N" at the bottom of `index.html`) and list any new file in `APP_FILES`.
 - Run `npm test` before pushing.
