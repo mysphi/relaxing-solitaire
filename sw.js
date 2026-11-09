@@ -1,7 +1,7 @@
 // Offline support: keep every game's files on the phone so it opens with no signal.
 // Bump VERSION whenever the app's files change so phones pick up the update.
 
-const VERSION = 'relaxing-games-v2';
+const VERSION = 'relaxing-games-v3';
 const APP_FILES = [
   './',
   'index.html',
