@@ -40,6 +40,7 @@ html, body {
 }
 
 .hub {
+  position: relative;
   min-height: 100dvh;
   max-width: 560px;
   margin: 0 auto;
@@ -74,3 +75,14 @@ html, body {
 .chev { flex: none; color: var(--muted); }
 
 .game-status[hidden] { display: none; }
+.version {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 16px);
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.7;
+}

@@ -1,7 +1,7 @@
 // Offline support: keep every game's files on the phone so it opens with no signal.
 // Bump VERSION whenever the app's files change so phones pick up the update.
 
-const VERSION = 'relaxing-games-v3';
+const VERSION = 'relaxing-games-v4';
 const APP_FILES = [
   './',
   'index.html',
@@ -65,8 +65,13 @@ self.addEventListener('fetch', (event) => {
       try {
         // GitHub Pages lets browsers keep files for 10 minutes; always check for a newer copy.
         const res = await fetch(event.request, isFont ? undefined : { cache: 'no-cache' });
-        if (res && (res.ok || res.type === 'opaque')) cache.put(event.request, res.clone());
-        return res;
+        if (res && (res.ok || res.type === 'opaque')) {
+          cache.put(event.request, res.clone());
+          return res;
+        }
+        // A failed or half-deployed file (404, 5xx) would leave a page without its styles
+        // or code, so use the saved copy instead when there is one.
+        return cached || res;
       } catch (err) {
         if (cached) return cached;
         throw err;
