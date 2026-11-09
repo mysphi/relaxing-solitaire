@@ -1,24 +1,40 @@
-// Offline support: keep the game's files on the phone so it opens with no signal.
+// Offline support: keep every game's files on the phone so it opens with no signal.
 // Bump VERSION whenever the app's files change so phones pick up the update.
 
-const VERSION = 'calm-solitaire-v15';
+const VERSION = 'relaxing-games-v1';
 const APP_FILES = [
   './',
   'index.html',
-  'styles.css',
-  'src/app.js',
-  'src/engine.js',
-  'src/storage.js',
-  'src/sound.js',
-  'src/winnable.js',
-  'sounds/card-down.m4a',
-  'sounds/shuffle.m4a',
+  'menu.css',
+  'menu.js',
   'manifest.webmanifest',
+  'common/nav.js',
   'icons/icon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
   'icons/apple-touch-icon.png',
+  // Solitaire
+  'solitaire/',
+  'solitaire/index.html',
+  'solitaire/styles.css',
+  'solitaire/game-icon.svg',
+  'solitaire/src/app.js',
+  'solitaire/src/engine.js',
+  'solitaire/src/storage.js',
+  'solitaire/src/sound.js',
+  'solitaire/src/winnable.js',
+  'solitaire/sounds/card-down.m4a',
+  'solitaire/sounds/shuffle.m4a',
+  // Mines
+  'mines/',
+  'mines/index.html',
+  'mines/styles.css',
+  'mines/game-icon.svg',
+  'mines/src/app.js',
+  'mines/src/engine.js',
+  'mines/src/solver.js',
+  'mines/src/storage.js',
 ];
 
 self.addEventListener('install', (event) => {

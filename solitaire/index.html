@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#4F6F5F">
+<meta name="description" content="Relaxing Solitaire: a calm, ad-free game of Klondike solitaire.">
+<title>Relaxing Solitaire</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="game-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>
+  // Apply light/dark, table colour and card back before the first paint, so nothing flashes.
+  try {
+    var look = JSON.parse(localStorage.getItem('calm-solitaire-look') || '{}');
+    var a = look.appearance || 'auto', root = document.documentElement;
+    if (a === 'dark' || (a === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) root.dataset.theme = 'dark';
+    if (look.table) root.dataset.table = look.table;
+    if (look.back) root.dataset.back = look.back;
+    if (look.suits) root.dataset.suits = look.suits;
+  } catch (e) {}
+</script>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menu-btn" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="pills">
+      <button class="pill" id="score-pill" aria-label="Score, open score history">Score <span id="score">0</span></button>
+      <button class="pill" id="moves-pill" aria-label="Moves, open score history">Moves <span id="moves">0</span></button>
+    </div>
+    <button class="icon-btn" id="home-btn" data-home aria-label="Back to the main menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>
+    </button>
+  </header>
+
+  <main id="board" aria-label="Solitaire table"></main>
+
+  <button id="finish-btn" class="finish-btn" hidden>Finish game</button>
+
+  <nav class="toolbar">
+    <button class="tool-btn" id="undo-btn" aria-label="Undo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+      <span>Undo</span>
+    </button>
+    <button class="tool-btn" id="hint-btn" aria-label="Hint">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>
+      <span>Hint</span>
+    </button>
+    <button class="tool-btn" id="new-btn" aria-label="New game">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>New game</span>
+    </button>
+  </nav>
+
+  <!-- Menu sheet -->
+  <div class="overlay" id="menu" hidden>
+    <div class="sheet" role="dialog" aria-label="Menu">
+      <div class="sheet-row">
+        <button class="pill-btn primary" data-action="resume">Resume Game</button>
+        <button class="close-btn" data-action="resume" aria-label="Close menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <button class="pill-btn" data-action="new">New Game</button>
+      <button class="pill-btn" data-action="restart">Restart This Deal</button>
+      <button class="pill-btn" data-action="history">Score History</button>
+      <button class="pill-btn" data-action="settings">Settings</button>
+      <button class="pill-btn" data-action="home" data-home>Main Menu</button>
+    </div>
+  </div>
+
+  <!-- Confirm dialog (new game / restart) -->
+  <div class="overlay center" id="confirm" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title">Start a new game?</h2>
+      <p id="confirm-text">Your current game will be lost.</p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="cancel">Keep playing</button>
+        <button class="dlg-btn primary" data-action="ok" id="confirm-ok">New game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings sheet -->
+  <div class="overlay" id="settings" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="settings-title">
+      <div class="sheet-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="close-btn" data-action="close" aria-label="Close settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <fieldset class="setting">
+        <legend>Draw</legend>
+        <div class="segmented" data-setting="drawCount">
+          <button data-value="1">Draw 1</button>
+          <button data-value="3">Draw 3</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Scoring</legend>
+        <div class="segmented" data-setting="scoring">
+          <button data-value="standard">Standard</button>
+          <button data-value="vegas">Vegas</button>
+          <button data-value="none">None</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Appearance</legend>
+        <div class="segmented" data-setting="appearance">
+          <button data-value="auto">Match phone</button>
+          <button data-value="light">Light</button>
+          <button data-value="dark">Dark</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Table colour</legend>
+        <div class="swatches" data-setting="table">
+          <button class="swatch" data-value="sage"><span class="chip tb-sage"></span>Sage</button>
+          <button class="swatch" data-value="slate"><span class="chip tb-slate"></span>Slate</button>
+          <button class="swatch" data-value="sand"><span class="chip tb-sand"></span>Sand</button>
+          <button class="swatch" data-value="plum"><span class="chip tb-plum"></span>Plum</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Card back</legend>
+        <div class="swatches" data-setting="back">
+          <button class="swatch" data-value="terracotta"><span class="mini bk-terracotta"></span>Terracotta</button>
+          <button class="swatch" data-value="stripe"><span class="mini bk-stripe"></span>Stripe</button>
+          <button class="swatch" data-value="dots"><span class="mini bk-dots"></span>Dots</button>
+          <button class="swatch" data-value="lattice"><span class="mini bk-lattice"></span>Lattice</button>
+        </div>
+      </fieldset>
+      <label class="toggle">
+        <span>Four-colour suits</span>
+        <input type="checkbox" data-setting="fourColour">
+      </label>
+      <label class="toggle">
+        <span>Card sounds</span>
+        <input type="checkbox" data-setting="sound">
+      </label>
+      <label class="slider" id="volume-row">
+        <span>Sound volume</span>
+        <input type="range" id="volume" min="0" max="100" step="5" aria-label="Sound volume">
+      </label>
+      <label class="toggle">
+        <span>Winnable deals only</span>
+        <input type="checkbox" data-setting="winnableOnly">
+      </label>
+      <p class="note">Winnable deals start from your next new game.</p>
+      <label class="toggle">
+        <span>Deck on the right</span>
+        <input type="checkbox" data-setting="deckOnRight">
+      </label>
+      <label class="toggle">
+        <span>Tap a card to move it</span>
+        <input type="checkbox" data-setting="tapToMove">
+      </label>
+      <label class="toggle">
+        <span>Show move counter</span>
+        <input type="checkbox" data-setting="showMoves">
+      </label>
+      <p class="note version">Version 16</p>
+    </div>
+  </div>
+
+  <!-- Score history sheet -->
+  <div class="overlay" id="history" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="history-title">
+      <div class="sheet-head">
+        <h2 id="history-title">Score History</h2>
+        <button class="close-btn" data-action="close" aria-label="Close score history">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <ol class="history-list" id="history-list"></ol>
+    </div>
+  </div>
+
+  <!-- Out of moves -->
+  <div class="overlay center" id="stuck" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="stuck-title">
+      <h2 id="stuck-title">No moves left</h2>
+      <p>There's nothing more to play in this deal. You can undo and try another way, or start a new game.</p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="undo">Undo</button>
+        <button class="dlg-btn primary" data-action="new">New game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Win -->
+  <div class="overlay center" id="win" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="win-title">
+      <h2 id="win-title">Well played</h2>
+      <p id="win-text"></p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn primary" data-action="again">Play again</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>

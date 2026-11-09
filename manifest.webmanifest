@@ -1,7 +1,7 @@
 {
-  "name": "Relaxing Solitaire",
-  "short_name": "Relaxing Solitaire",
-  "description": "A calm, ad-free game of Klondike solitaire.",
+  "name": "Relaxing Games",
+  "short_name": "Relaxing Games",
+  "description": "Calm, ad-free solitaire and mines, with no timers.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
