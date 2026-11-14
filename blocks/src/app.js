@@ -16,8 +16,6 @@ const tray = $('tray');
 const wrap = $('board-wrap');
 const blocksEl = $('blocks');
 
-const KEY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#FFF3E6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
-
 let st = load() || fresh();
 let g = st.game;
 
@@ -109,7 +107,6 @@ function buildBoard() {
     el.dataset.i = i;
     el.style.setProperty('--knot', 20 + ((i * 37) % 60) + '%');
     el.setAttribute('aria-label', b.key ? 'Red block' : (b.dir === 'h' ? 'Block lying across' : 'Block standing up'));
-    if (b.key) el.innerHTML = KEY_SVG;
     blocksEl.appendChild(el);
     return el;
   });
@@ -123,8 +120,8 @@ function sizeBoard() {
   if (!g) return;
   const { size, exitRow, blocks } = g.board;
   const cs = getComputedStyle(wrap);
-  const w = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 12 - 2 * 30; // rim, room for the exit arrow
-  const h = wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 12;
+  const w = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 2 * 8 - 2 * 10; // rims, room for the gap to show
+  const h = wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - 2 * 8;
   gapPx = size === 7 ? 4 : 5;
   padPx = 10;
   const fit = Math.min(w, h) - 2 * padPx - (size - 1) * gapPx;
@@ -136,7 +133,6 @@ function sizeBoard() {
   tray.style.setProperty('--pad', padPx + 'px');
   const top = padPx + exitRow * step();
   Object.assign($('exit').style, { top: top + 'px', height: cellPx + 'px' });
-  Object.assign($('exit-arrow').style, { top: top + cellPx / 2 - 12 + 'px' });
   blocks.forEach((b, i) => {
     const el = els[i];
     el.style.width = (b.dir === 'h' ? b.len * cellPx + (b.len - 1) * gapPx : cellPx) + 'px';
