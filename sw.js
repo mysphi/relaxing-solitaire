@@ -1,7 +1,7 @@
 // Offline support: keep every game's files on the phone so it opens with no signal.
 // Bump VERSION whenever the app's files change so phones pick up the update.
 
-const VERSION = 'relaxing-games-v6';
+const VERSION = 'relaxing-games-v7';
 const APP_FILES = [
   './',
   'index.html',
@@ -35,6 +35,18 @@ const APP_FILES = [
   'mines/src/engine.js',
   'mines/src/solver.js',
   'mines/src/storage.js',
+  // Blocks
+  'blocks/',
+  'blocks/index.html',
+  'blocks/styles.css',
+  'blocks/game-icon.svg',
+  'blocks/src/app.js',
+  'blocks/src/bank.js',
+  'blocks/src/engine.js',
+  'blocks/src/solver.js',
+  'blocks/src/sound.js',
+  'blocks/src/storage.js',
+  'blocks/src/worker.js',
 ];
 
 self.addEventListener('install', (event) => {

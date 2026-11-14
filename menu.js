@@ -19,10 +19,18 @@ function minesStatus() {
   return level + ' · ' + plural(g.moves, 'move');
 }
 
+function blocksStatus() {
+  const g = read('relaxing-blocks-v1')?.game;
+  if (!g || !g.moves || g.won) return null;
+  const level = { easy: 'Easy', medium: 'Medium', hard: 'Hard', expert: 'Expert' }[g.level] || '';
+  return level + ' · ' + plural(g.moves, 'move');
+}
+
 function showStatus() {
   const s = solitaireStatus();
   const m = minesStatus();
-  for (const [id, text] of [['solitaire-status', s], ['mines-status', m]]) {
+  const b = blocksStatus();
+  for (const [id, text] of [['solitaire-status', s], ['mines-status', m], ['blocks-status', b]]) {
     const el = document.getElementById(id);
     el.textContent = text || '';
     el.hidden = !text;

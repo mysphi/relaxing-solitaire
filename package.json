@@ -1,1 +1,1 @@
-{"name":"relaxing-games","private":true,"type":"module","scripts":{"test":"node --test solitaire/tests/*.test.js mines/tests/*.test.js"}}
+{"name":"relaxing-games","private":true,"type":"module","scripts":{"test":"node --test solitaire/tests/*.test.js mines/tests/*.test.js blocks/tests/*.test.js"}}

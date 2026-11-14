@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#4F6F5F">
+<meta name="description" content="Relaxing Blocks: a calm sliding block puzzle with no timer.">
+<title>Relaxing Blocks</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="game-icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>
+  // Apply light/dark and board colour before the first paint, so nothing flashes.
+  try {
+    var look = JSON.parse(localStorage.getItem('relaxing-blocks-look') || '{}');
+    var a = look.appearance || 'auto', root = document.documentElement;
+    if (a === 'dark' || (a === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches)) root.dataset.theme = 'dark';
+    if (look.table) root.dataset.table = look.table;
+  } catch (e) {}
+</script>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menu-btn" aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <div class="pills">
+      <button class="pill" id="moves-pill" aria-label="Moves, open stats">Moves <span id="moves">0</span></button>
+      <button class="pill" id="par-pill" aria-label="Par, open stats">Par <span id="par">0</span></button>
+    </div>
+    <button class="icon-btn" id="home-btn" data-home aria-label="Back to the main menu">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>
+    </button>
+  </header>
+  <div class="board-label" id="board-label"></div>
+
+  <main id="board-wrap" aria-label="Puzzle">
+    <div id="tray">
+      <div id="cells"></div>
+      <div class="exit" id="exit" aria-hidden="true"></div>
+      <svg class="exit-arrow" id="exit-arrow" width="20" height="24" viewBox="0 0 20 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5l7 7-7 7"/></svg>
+      <div id="blocks"></div>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <nav class="toolbar" aria-label="Game controls">
+    <button class="tool-btn" id="undo-btn" aria-label="Undo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>
+      <span>Undo</span>
+    </button>
+    <button class="tool-btn" id="hint-btn" aria-label="Hint">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>
+      <span>Hint</span>
+    </button>
+    <button class="tool-btn" id="restart-btn" aria-label="Restart">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/></svg>
+      <span>Restart</span>
+    </button>
+    <button class="tool-btn" id="new-btn" aria-label="New puzzle">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>New</span>
+    </button>
+  </nav>
+
+  <!-- Menu -->
+  <div class="overlay" id="menu" hidden>
+    <div class="sheet" role="dialog" aria-label="Menu">
+      <div class="sheet-row">
+        <button class="pill-btn primary" data-action="resume">Resume Puzzle</button>
+        <button class="close-btn" data-action="resume" aria-label="Close menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <button class="pill-btn" data-action="new">New Puzzle</button>
+      <button class="pill-btn" data-action="restart">Restart This Puzzle</button>
+      <button class="pill-btn" data-action="stats">Stats and History</button>
+      <button class="pill-btn" data-action="settings">Settings</button>
+      <button class="pill-btn" data-action="howto">How to Play</button>
+      <button class="pill-btn" data-action="home" data-home>Main Menu</button>
+    </div>
+  </div>
+
+  <!-- Confirm -->
+  <div class="overlay center" id="confirm" hidden>
+    <div class="dialog" role="dialog" aria-labelledby="confirm-title">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-text"></p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="cancel">Keep playing</button>
+        <button class="dlg-btn primary" data-action="ok" id="confirm-ok"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Solved -->
+  <div class="overlay low" id="won" hidden>
+    <div class="dialog centred" role="dialog" aria-labelledby="won-title">
+      <div class="won-mark" aria-hidden="true">
+        <span class="won-key"></span>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h12"/><path d="M12 6l6 6-6 6"/></svg>
+      </div>
+      <h2 id="won-title">Solved</h2>
+      <p class="won-score" id="won-text"></p>
+      <p class="small" id="won-note"></p>
+      <div class="dialog-buttons">
+        <button class="dlg-btn" data-action="stats">See stats</button>
+        <button class="dlg-btn primary" data-action="new">Next puzzle</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="overlay" id="settings" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="settings-title">
+      <div class="sheet-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="close-btn" data-action="close" aria-label="Close settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <fieldset class="setting">
+        <legend>Difficulty</legend>
+        <div class="segmented" data-setting="difficulty">
+          <button data-value="easy">Easy</button>
+          <button data-value="medium">Medium</button>
+          <button data-value="hard">Hard</button>
+          <button data-value="expert">Expert</button>
+        </div>
+      </fieldset>
+      <div class="toggles">
+        <label class="toggle"><span>Tap to move</span><input class="sw" type="checkbox" data-setting="tapToMove"></label>
+        <label class="toggle"><span>Wall cells</span><input class="sw" type="checkbox" data-setting="walls"></label>
+        <label class="toggle"><span>Show moves and par</span><input class="sw" type="checkbox" data-setting="showMoves"></label>
+        <label class="toggle"><span>Sounds</span><input class="sw" type="checkbox" data-setting="sound"></label>
+        <label class="toggle"><span>Vibrate on slide</span><input class="sw" type="checkbox" data-setting="vibrate"></label>
+      </div>
+      <fieldset class="setting">
+        <legend>Appearance</legend>
+        <div class="segmented" data-setting="appearance">
+          <button data-value="auto">Match phone</button>
+          <button data-value="light">Light</button>
+          <button data-value="dark">Dark</button>
+        </div>
+      </fieldset>
+      <fieldset class="setting">
+        <legend>Board colour</legend>
+        <div class="swatches" data-setting="table">
+          <button class="swatch" data-value="sage"><span class="chip tb-sage"></span>Sage</button>
+          <button class="swatch" data-value="slate"><span class="chip tb-slate"></span>Slate</button>
+          <button class="swatch" data-value="sand"><span class="chip tb-sand"></span>Sand</button>
+          <button class="swatch" data-value="plum"><span class="chip tb-plum"></span>Plum</button>
+        </div>
+      </fieldset>
+    </div>
+  </div>
+
+  <!-- Stats and history -->
+  <div class="overlay" id="stats" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="stats-title">
+      <div class="sheet-head">
+        <h2 id="stats-title">Stats and History</h2>
+        <button class="close-btn" data-action="close" aria-label="Close stats">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="segmented" id="stats-tabs">
+        <button data-value="easy">Easy</button>
+        <button data-value="medium">Medium</button>
+        <button data-value="hard">Hard</button>
+        <button data-value="expert">Expert</button>
+      </div>
+      <div class="stat-grid" id="stat-grid"></div>
+      <h3 class="list-head">Recent puzzles</h3>
+      <ol class="history-list" id="history-list"></ol>
+    </div>
+  </div>
+
+  <!-- How to play -->
+  <div class="overlay" id="howto" hidden>
+    <div class="sheet tall" role="dialog" aria-labelledby="howto-title">
+      <div class="sheet-head">
+        <h2 id="howto-title">How to Play</h2>
+        <button class="close-btn" data-action="close" aria-label="Close how to play">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div class="howto">
+        <p><b>The goal:</b> slide the red block out through the gap in the right-hand wall.</p>
+        <p><b>Drag</b> a block to slide it. Blocks only move along their length and can't pass through each other or walls.</p>
+        <p><b>Tap to move</b> (in Settings): tap a block, then tap the empty cell it should slide to.</p>
+        <p><b>Par</b> is the fewest moves the puzzle can be solved in. One slide counts as one move, however far it goes.</p>
+        <p><b>Hint</b> slides the best next block for you. <b>Undo</b> takes back a move. Puzzles where you use a hint don't count in your stats.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
