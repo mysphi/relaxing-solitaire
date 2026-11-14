@@ -1,6 +1,6 @@
 # Relaxing Games
 
-Calm, ad-free games for Android phones, with no timers: **Solitaire** (Klondike) and **Mines** (a mine-clearing puzzle). It runs in the browser and installs to the home screen as one app (a Progressive Web App), then works offline.
+Calm, ad-free games for Android phones, with no timers: **Solitaire** (Klondike), **Mines** (a mine-clearing puzzle) and **Blocks** (a sliding block puzzle). It runs in the browser and installs to the home screen as one app (a Progressive Web App), then works offline.
 
 Live: https://mysphi.github.io/relaxing-solitaire/
 
@@ -20,6 +20,7 @@ Plain HTML, CSS and JavaScript. No framework and no build step, so there is noth
 | `common/nav.js` | Shared by the games: the way back to the main menu. |
 | `solitaire/` | Relaxing Solitaire: `src/engine.js` (rules), `src/app.js` (screen), `src/storage.js`, `src/sound.js`, `src/solver.js` + `src/winnable.js` (winnable deals), `tests/`, `tools/`. |
 | `mines/` | Relaxing Mines: `src/engine.js` (rules), `src/solver.js` (no-guess boards and hints), `src/app.js`, `src/storage.js`, `tests/`. |
+| `blocks/` | Relaxing Blocks: `src/engine.js` (rules and puzzle making), `src/solver.js` (par, hints, hardest boards), `src/worker.js` (makes puzzles in the background), `src/bank.js` (ready-made puzzles, built by `tools/make-bank.mjs`), `src/app.js`, `src/storage.js`, `src/sound.js`, `tests/`. |
 | `manifest.webmanifest`, `icons/` | The installed app's name and icon. |
 | `sw.js` | Offline support for every game. Bump `VERSION` and list any new file in `APP_FILES` when files change. |
 | `.github/workflows/deploy.yml` | Runs the tests and publishes the site to GitHub Pages on every push to `main`. |
@@ -36,5 +37,16 @@ The rules are kept separate from the screen so that a Google Play version, or th
 - **Standard:** +5 for waste to column, +10 to a foundation, +5 for turning a card over, −15 for taking a card back off a foundation, −100 for recycling the stock (−20 in Draw 3). Never below zero.
 - **Vegas:** starts at −52, +5 for each card on a foundation.
 - **None:** no score shown.
+
+## Blocks puzzles
+
+Every puzzle is checked by a solver, so it can always be solved and its par (fewest moves) is known. One slide counts as one move, however far it goes. The phone makes fresh puzzles in the background and keeps a couple ready; the built-in bank covers the moments before one is ready.
+
+| Level | Board | Par |
+| --- | --- | --- |
+| Easy | 6 × 6 | 4 to 8 |
+| Medium | 6 × 6 | 9 to 16 |
+| Hard | 6 × 6 | 17 to 30 |
+| Expert | 7 × 7 | 20 to 40 |
 
 There is no timer in any game.

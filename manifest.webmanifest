@@ -1,7 +1,7 @@
 {
   "name": "Relaxing Games",
   "short_name": "Relaxing Games",
-  "description": "Calm, ad-free solitaire and mines, with no timers.",
+  "description": "Calm, ad-free solitaire, mines and sliding blocks, with no timers.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
