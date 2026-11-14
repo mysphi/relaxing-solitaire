@@ -431,5 +431,5 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
    buttons always clear the gesture bar. */
 :root { --safe-bottom: max(env(safe-area-inset-bottom, 0px), env(safe-area-max-inset-bottom, 0px)); }
 @media (display-mode: standalone) {
-  :root { --safe-bottom: max(env(safe-area-inset-bottom, 0px), env(safe-area-max-inset-bottom, 0px), 28px); }
+  :root { --safe-bottom: calc(max(env(safe-area-inset-bottom, 0px), env(safe-area-max-inset-bottom, 0px), 28px) + 12px); }
 }
